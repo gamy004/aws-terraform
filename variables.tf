@@ -16,6 +16,7 @@ variable "db" {
     security_group_ids = list(string)
     min_capacity       = number
     max_capacity       = number
+    num_instances      = number
     database_subnet_group_name = string
   })
   default = {
@@ -24,6 +25,7 @@ variable "db" {
     security_group_ids = []
     min_capacity       = 0.5
     max_capacity       = 1
+    num_instances      = 1
     database_subnet_group_name = ""
   }
 }
