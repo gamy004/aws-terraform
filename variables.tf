@@ -1,18 +1,12 @@
+variable "vpc_name" {
+  description = "Value of the vpc name for the infrastructure"
+  type        = string
+}
+
 variable "stage" {
   description = "Value of the stage for the infrastructure"
   type        = string
   default     = "default"
-}
-
-variable "vpc" {
-  type = object({
-    id = string
-    database_subnet_group_name = string
-  })
-  default = {
-    id = ""
-    database_subnet_group_name = ""
-  }
 }
 
 variable "db" {
@@ -22,6 +16,7 @@ variable "db" {
     security_group_ids = list(string)
     min_capacity       = number
     max_capacity       = number
+    database_subnet_group_name = string
   })
   default = {
     name               = "db"
@@ -29,6 +24,7 @@ variable "db" {
     security_group_ids = []
     min_capacity       = 0.5
     max_capacity       = 1
+    database_subnet_group_name = ""
   }
 }
 

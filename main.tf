@@ -12,6 +12,13 @@ locals {
   }
 }
 
+data "aws_vpc" "selected" {
+  filter {
+    name = "tag:Name"
+    values = [var.vpc_name]
+  }
+}
+
 data "aws_rds_engine_version" "postgresql" {
   engine  = "aurora-postgresql"
   version = "15.3"
@@ -27,12 +34,12 @@ module "db" {
   storage_encrypted = true
   master_username   = "postgres"
 
-  vpc_id               = var.vpc.id
+  vpc_id               = data.aws_vpc.selected.id
 
   create_security_group = false
   vpc_security_group_ids = var.db.security_group_ids
 
-  db_subnet_group_name = var.vpc.database_subnet_group_name
+  db_subnet_group_name = var.db.database_subnet_group_name
 
   create_monitoring_role = false
   monitoring_interval = 60
