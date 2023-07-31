@@ -29,7 +29,7 @@ module "db" {
 
   vpc_id               = var.vpc.id
   vpc_security_group_ids = var.db.security_group_ids
-  # db_subnet_group_name = var.vpc.database_subnet_group_name
+  db_subnet_group_name = var.vpc.database_subnet_group_name
 
   monitoring_interval = 60
 

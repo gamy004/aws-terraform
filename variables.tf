@@ -11,7 +11,7 @@ variable "vpc" {
   })
   default = {
     id = ""
-    # database_subnet_group_name = ""
+    database_subnet_group_name = ""
   }
 }
 
