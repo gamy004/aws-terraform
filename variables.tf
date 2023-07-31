@@ -18,12 +18,14 @@ variable "vpc" {
 variable "db" {
   type = object({
     name               = string
+    monitoring_role_arn = string
     security_group_ids = list(string)
     min_capacity       = number
     max_capacity       = number
   })
   default = {
     name               = "db"
+    monitoring_role_arn = ""
     security_group_ids = []
     min_capacity       = 0.5
     max_capacity       = 1

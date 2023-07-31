@@ -32,7 +32,8 @@ module "db" {
   db_subnet_group_name = var.vpc.database_subnet_group_name
 
   monitoring_interval = 60
-
+  monitoring_role_arn = var.db.monitoring_role_arn
+  
   apply_immediately   = true
   skip_final_snapshot = true
 
