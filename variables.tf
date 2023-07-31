@@ -7,7 +7,7 @@ variable "stage" {
 variable "vpc" {
   type = object({
     id = string
-    # database_subnet_group_name = string
+    database_subnet_group_name = string
   })
   default = {
     id = ""
