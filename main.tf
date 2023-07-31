@@ -28,13 +28,16 @@ module "db" {
   master_username   = "postgres"
 
   vpc_id               = var.vpc.id
+
+  create_security_group = false
   vpc_security_group_ids = var.db.security_group_ids
+
   db_subnet_group_name = var.vpc.database_subnet_group_name
 
-  monitoring_interval = 60
-  monitoring_role_name   = var.db.monitoring_role_name
   create_monitoring_role = false
-
+  monitoring_interval = 60
+  monitoring_role_arn = var.db.monitoring_role_arn
+  
   apply_immediately   = true
   skip_final_snapshot = true
 
