@@ -8,6 +8,6 @@ resource "aws_instance" "app_server" {
   subnet_id = "subnet-0d532cff718432c72"
 
   tags = {
-    Name = "${var.instance_name}-${terraform.workspace}"
+    Name = "${terraform.workspace}-${var.instance_name}"
   }
 }
