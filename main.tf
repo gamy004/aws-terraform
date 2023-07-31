@@ -54,9 +54,19 @@ module "db" {
   }
 
   instance_class = "db.serverless"
+  # instances = merge(flatten([
+  #   for v in range(1, var.db.num_instances + 1):
+  #   [
+  #     {
+  #       "instance-${v}" = {
+  #         identifier = "${local.name}-${var.db.name}-${var.stage}-instance-${v}"
+  #       }
+  #     }
+  #   ]
+  # ])...)
   instances = {
-    for v in range(1, var.db.num_instances): 
-      v => { identifier = "${local.name}-${var.db.name}-${var.stage}-instance-${v}" }
+    for v in range(1, var.db.num_instances + 1): 
+      "instance-${v}" => { identifier = "${local.name}-${var.db.name}-${var.stage}-instance-${v}" }
   }
 
   tags = local.tags
