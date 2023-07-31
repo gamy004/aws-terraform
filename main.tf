@@ -48,7 +48,9 @@ module "db" {
 
   instance_class = "db.serverless"
   instances = {
-    instance-1 = {}
+    one = {
+      identifier = "${local.name}-${var.db.name}-${var.stage}-instance-1"
+    }
   }
 
   tags = local.tags
