@@ -55,8 +55,8 @@ module "db" {
 
   instance_class = "db.serverless"
   instances = {
-    for k, v in range(1, var.db.num_instances): 
-      k => { identifier = "${local.name}-${var.db.name}-${var.stage}-instance-${v}" }
+    for v in range(1, var.db.num_instances): 
+      v => { identifier = "${local.name}-${var.db.name}-${var.stage}-instance-${v}" }
   }
 
   tags = local.tags
