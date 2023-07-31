@@ -3,7 +3,7 @@ terraform {
     organization = "kmutt-4life"
     
     workspaces {
-      name = "ct4life-dev"
+      name = "ct4life"
     }
   }
 
