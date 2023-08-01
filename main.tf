@@ -1,8 +1,6 @@
 locals {
-  name = "ct4life"
-
   tags = {
-    Project = local.name
+    Project = var.project_name
     Environment = var.stage
     Terraform = true
   }
@@ -85,11 +83,11 @@ module "security_groups" {
   configs = merge(
     var.sg_configs,
     {
-      secure_security_group_name = "${local.name}-secure-sg-${var.stage}"
-      app_security_group_name = "${local.name}-app-sg-${var.stage}"
-      external_alb_security_group_name = "${local.name}-external-alb-sg-${var.stage}"
-      public_alb_security_group_name = "${local.name}-alb-sg-${var.stage}"
-      private_alb_security_group_name = "${local.name}-nonexpose-alb-sg-${var.stage}"
+      secure_security_group_name = "${var.project_name}-secure-sg-${var.stage}"
+      app_security_group_name = "${var.project_name}-app-sg-${var.stage}"
+      external_alb_security_group_name = "${var.project_name}-external-alb-sg-${var.stage}"
+      public_alb_security_group_name = "${var.project_name}-alb-sg-${var.stage}"
+      private_alb_security_group_name = "${var.project_name}-nonexpose-alb-sg-${var.stage}"
       db_port = var.db_configs.port
     }
   )
@@ -108,7 +106,7 @@ module "database" {
   configs = merge(
     var.db_configs,
     {
-      name = "${local.name}-${var.db_configs.name}-${var.stage}"
+      name = "${var.project_name}-${var.db_configs.name}-${var.stage}"
       monitoring_role_arn = "arn:aws:iam::${var.workload_account_id}:role/rds-monitoring-role"
       security_group_ids = [module.security_groups.secure_sg.id]
     }
@@ -173,10 +171,10 @@ module "load_balancers" {
   configs = merge(
     var.lb_configs,
     {
-      external_alb_name = "${local.name}-external-alb-${var.stage}"
-      external_alb_target_group_name = "${local.name}-external-alb-tg-${var.stage}"
-      public_alb_name = "${local.name}-alb-${var.stage}"
-      private_alb_name = "${local.name}-nonexpose-alb-${var.stage}"
+      external_alb_name = "${var.project_name}-external-alb-${var.stage}"
+      external_alb_target_group_name = "${var.project_name}-external-alb-tg-${var.stage}"
+      public_alb_name = "${var.project_name}-alb-${var.stage}"
+      private_alb_name = "${var.project_name}-nonexpose-alb-${var.stage}"
       external_alb_security_group_ids = [module.security_groups.external_alb_sg.id]
       public_alb_security_group_ids = [module.security_groups.public_alb_sg.id]
       private_alb_security_group_ids = [module.security_groups.private_alb_sg.id]

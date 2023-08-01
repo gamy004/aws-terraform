@@ -1,3 +1,8 @@
+variable "project_name" {
+  description = "Value of the project name associated with the infrastructure"
+  type        = string
+}
+
 variable "domain_name" {
   description = "Value of the domain name associated with the infrastructure"
   type        = string
