@@ -37,7 +37,47 @@ resource "aws_security_group" "public_alb_sg" {
       to_port          = 443
     },
   ]
-  tags   = var.tags
+  tags   = merge(var.tags, { Name = var.configs.public_alb_security_group_name })
+  vpc_id = var.vpc_id
+
+  timeouts {}
+}
+
+resource "aws_security_group" "private_alb_sg" {
+  name   = var.configs.private_alb_security_group_name
+  description = var.configs.private_alb_security_group_name
+  egress = [
+    {
+      cidr_blocks = [
+        "0.0.0.0/0",
+      ]
+      description      = ""
+      from_port        = 0
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      protocol         = "-1"
+      security_groups  = []
+      self             = false
+      to_port          = 0
+    },
+  ]
+  ingress = [
+    {
+      cidr_blocks = [
+        "0.0.0.0/0",
+      ]
+      description      = ""
+      from_port        = 443
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      protocol         = "tcp"
+      security_groups  = []
+      self             = false
+      to_port          = 443
+    },
+  ]
+
+  tags   = merge(var.tags, { Name = var.configs.private_alb_security_group_name })
   vpc_id = var.vpc_id
 
   timeouts {}
@@ -79,7 +119,7 @@ resource "aws_security_group" "app_sg" {
     },
   ]
 
-  tags   = var.tags
+  tags   = merge(var.tags, { Name = var.configs.app_security_group_name })
   vpc_id = var.vpc_id
 
   timeouts {}
@@ -140,7 +180,7 @@ resource "aws_security_group" "secure_sg" {
       to_port = var.configs.db_port
     },
   ]
-  tags   = var.tags
+  tags   = merge(var.tags, { Name = var.configs.secure_security_group_name })
   vpc_id = var.vpc_id
 
   timeouts {}
