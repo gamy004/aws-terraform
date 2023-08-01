@@ -1,0 +1,36 @@
+variable "vpc_id" {
+  description = "Value of the vpc id for the database"
+  type        = string
+}
+
+variable "configs" {
+  description = "Value of the configurations for the database"
+  type = object({
+    secure_security_group_name = string
+    app_security_group_name = string
+    public_alb_security_group_name = string
+    private_alb_security_group_name = string
+    db_port = number
+  })
+  default = {
+    secure_security_group_name = "<project>-secure-sg-<stage>"
+    app_security_group_name = "<project>-app-sg-<stage>"
+    public_alb_security_group_name = "<project>-alb-sg-<stage>"
+    private_alb_security_group_name = "<project>-nonexpose-alb-sg-<stage>"
+    db_port = 5432
+  }
+}
+
+variable "tags" {
+  description = "Value of the tags for the database"
+  type        = object({
+    Name        = string
+    Environment = string
+    Terraform   = bool
+  })
+  default = {
+    Name        = ""
+    Environment = ""
+    Terraform   = true
+  }
+}

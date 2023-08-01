@@ -1,7 +1,3 @@
-provider "aws" {
-  region  = "ap-southeast-1"
-}
-
 locals {
   name = "ct4life"
 
@@ -12,62 +8,76 @@ locals {
   }
 }
 
-data "aws_vpc" "selected" {
+provider "aws" {
+  alias   = "database_role"
+  assume_role {
+    role_arn = "arn:aws:iam::${var.workload_account_id}:role/KMUTTDatabaseRole"
+  }
+}
+
+provider "aws" {
+  alias   = "infra_role"
+  assume_role {
+    role_arn = "arn:aws:iam::${var.workload_account_id}:role/KMUTTInfraRole"
+  }
+}
+
+provider "aws" {
+  alias   = "security_role"
+  assume_role {
+    role_arn = "arn:aws:iam::${var.workload_account_id}:role/KMUTTSecurityRole"
+  }
+}
+
+data "aws_iam_account_alias" "workload_account_alias" {
+  provider = aws.infra_role
+}
+
+data "aws_vpc" "workload_vpc" {
+  provider = aws.infra_role
   filter {
     name = "tag:Name"
-    values = [var.vpc_name]
+    values = ["${data.aws_iam_account_alias.workload_account_alias.account_alias}-vpc"]
   }
 }
 
-data "aws_rds_engine_version" "postgresql" {
-  engine  = "aurora-postgresql"
-  version = "15.3"
+module "security_groups" {
+  source = "./seceruity-group"
+
+  providers = {
+    aws = aws.security_role
+  }
+
+  vpc_id = data.aws_vpc.workload_vpc.id
+  configs = merge(
+    var.sg_configs,
+    {
+      secure_security_group_name = "${local.name}-secure-sg-${var.stage}"
+      app_security_group_name = "${local.name}-app-sg-${var.stage}"
+      public_alb_security_group_name = "${local.name}-alb-sg-${var.stage}"
+      private_alb_security_group_name = "${local.name}-nonexpose-alb-sg-${var.stage}"
+      db_port = var.db_configs.port
+    }
+  )
+  tags = local.tags
 }
 
-module "db" {
-  source = "terraform-aws-modules/rds-aurora/aws"
+module "database" {
+  depends_on = [ module.security_groups ]
+  source = "./database"
 
-  name              = "${local.name}-${var.db.name}-${var.stage}"
-  engine            = data.aws_rds_engine_version.postgresql.engine
-  engine_mode       = "provisioned"
-  engine_version    = data.aws_rds_engine_version.postgresql.version
-  storage_encrypted = true
-  master_username   = "postgres"
-
-  vpc_id               = data.aws_vpc.selected.id
-
-  create_security_group = false
-  vpc_security_group_ids = var.db.security_group_ids
-
-  db_subnet_group_name = var.db.database_subnet_group_name
-
-  create_monitoring_role = false
-  monitoring_interval = 60
-  monitoring_role_arn = var.db.monitoring_role_arn
-  
-  apply_immediately   = true
-  skip_final_snapshot = true
-
-  serverlessv2_scaling_configuration = {
-    min_capacity = var.db.min_capacity
-    max_capacity = var.db.max_capacity
+  providers = {
+    aws = aws.database_role
   }
 
-  instance_class = "db.serverless"
-  # instances = merge(flatten([
-  #   for v in range(1, var.db.num_instances + 1):
-  #   [
-  #     {
-  #       "instance-${v}" = {
-  #         identifier = "${local.name}-${var.db.name}-${var.stage}-instance-${v}"
-  #       }
-  #     }
-  #   ]
-  # ])...)
-  instances = {
-    for v in range(1, var.db.num_instances + 1): 
-      "instance-${v}" => { identifier = "${local.name}-${var.db.name}-${var.stage}-instance-${v}" }
-  }
-
+  vpc_id = data.aws_vpc.workload_vpc.id
+  configs = merge(
+    var.db_configs,
+    {
+      name = "${local.name}-${var.db_configs.name}-${var.stage}"
+      monitoring_role_arn = "arn:aws:iam::${var.workload_account_id}:role/rds-monitoring-role"
+      security_group_ids = [module.security_groups.secure_sg.id]
+    }
+  )
   tags = local.tags
 }

@@ -1,5 +1,5 @@
-variable "vpc_name" {
-  description = "Value of the vpc name for the infrastructure"
+variable "workload_account_id" {
+  description = "Value of the desnitation account id for the infrastructure"
   type        = string
 }
 
@@ -9,29 +9,26 @@ variable "stage" {
   default     = "default"
 }
 
-variable "db" {
+variable "db_configs" {
   type = object({
     name               = string
-    monitoring_role_arn = string
-    security_group_ids = list(string)
+    port               = number
     min_capacity       = number
     max_capacity       = number
     num_instances      = number
-    database_subnet_group_name = string
+    subnet_group_name  = string
   })
   default = {
     name               = "db"
-    monitoring_role_arn = ""
-    security_group_ids = []
+    port               = 5432
     min_capacity       = 0.5
     max_capacity       = 1
     num_instances      = 1
-    database_subnet_group_name = ""
+    subnet_group_name  = ""
   }
 }
 
-# variable "instance_name" {
-#   description = "Value of the Name tag for the EC2 instance"
-#   type        = string
-#   default     = "example-instance"
-# }
+variable "sg_configs" {
+  type = object({})
+  default = {}
+}
