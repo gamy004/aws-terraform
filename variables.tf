@@ -1,5 +1,15 @@
+variable "domain_name" {
+  description = "Value of the domain name associated with the infrastructure"
+  type        = string
+}
+
 variable "workload_account_id" {
-  description = "Value of the desnitation account id for the infrastructure"
+  description = "Value of the workload account id for the infrastructure"
+  type        = string
+}
+
+variable "network_account_id" {
+  description = "Value of the network account id for the infrastructure"
   type        = string
 }
 
@@ -29,6 +39,11 @@ variable "db_configs" {
 }
 
 variable "sg_configs" {
+  type = object({})
+  default = {}
+}
+
+variable "lb_configs" {
   type = object({})
   default = {}
 }

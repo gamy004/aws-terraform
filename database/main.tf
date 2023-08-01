@@ -40,5 +40,5 @@ module "db" {
       "instance-${v}" => { identifier = "${var.configs.name}-instance-${v}" }
   }
 
-  tags = var.tags
+  tags   = merge(var.tags, { Name = var.configs.name })
 }

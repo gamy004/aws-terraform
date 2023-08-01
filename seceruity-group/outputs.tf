@@ -1,3 +1,7 @@
+output "external_alb_sg" {
+  value = aws_security_group.external_alb_sg
+}
+
 output "public_alb_sg" {
   value = aws_security_group.public_alb_sg
 }

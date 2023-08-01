@@ -1,3 +1,47 @@
+resource "aws_security_group" "external_alb_sg" {
+  lifecycle {
+    ignore_changes = [
+      description
+    ]
+  }
+  name        = var.configs.external_alb_security_group_name
+  description = "Allow HTTP/S from anywhere"
+  egress = [
+    {
+      cidr_blocks = [
+        "0.0.0.0/0",
+      ]
+      description      = ""
+      from_port        = 0
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      protocol         = "-1"
+      security_groups  = []
+      self             = false
+      to_port          = 0
+    },
+  ]
+  ingress = [
+    {
+      cidr_blocks = [
+        "0.0.0.0/0",
+      ]
+      description      = ""
+      from_port        = 443
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      protocol         = "tcp"
+      security_groups  = []
+      self             = false
+      to_port          = 443
+    },
+  ]
+  tags   = merge(var.tags, { Name = var.configs.external_alb_security_group_name })
+  vpc_id = var.vpc_id
+
+  timeouts {}
+}
+
 resource "aws_security_group" "public_alb_sg" {
   lifecycle {
     ignore_changes = [

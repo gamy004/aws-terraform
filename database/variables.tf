@@ -30,12 +30,12 @@ variable "configs" {
 variable "tags" {
   description = "Value of the tags for the database"
   type        = object({
-    Name        = string
+    Project        = string
     Environment = string
     Terraform   = bool
   })
   default = {
-    Name        = ""
+    Project        = ""
     Environment = ""
     Terraform   = true
   }
