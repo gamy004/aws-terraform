@@ -59,7 +59,8 @@ module "public_alb" {
 }
 
 locals {
-  lb_computed_name = module.public_alb.lb_arn_suffix
+  lb_id_name = "${module.public_alb.lb_id}|${module.public_alb.lb_arn_suffix}"
+  lb_computed_name = split("|", local.lb_id_name)[1]
 }
 
 data "aws_network_interface" "public_network_interfaces" {
@@ -67,7 +68,7 @@ data "aws_network_interface" "public_network_interfaces" {
 
   filter {
     name   = "description"
-    values = ["ELB ${lb_computed_name}"]
+    values = ["ELB ${local.lb_computed_name}"]
   }
 
   filter {
