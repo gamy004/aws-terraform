@@ -59,6 +59,9 @@ module "public_alb" {
   tags = merge(var.tags, { Name: var.configs.public_alb_name })
 }
 
+data "dns_a_record_set" "internal_ips" {
+  host = module.public_alb.lb_dns_name
+}
 
 # data "aws_network_interface" "public_network_interfaces" {
 #   depends_on = [module.public_alb]

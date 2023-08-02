@@ -6,6 +6,6 @@ output "private_alb" {
   value = module.private_alb
 }
 
-# output "alb_private_ips" {
-#   value = [for eni in data.aws_network_interface.public_network_interfaces : eni.private_ip]
-# }
+output "alb_private_ips" {
+  value = [for private_ip in data.dns_a_record_set.internal_ips.addrs : private_ip]
+}

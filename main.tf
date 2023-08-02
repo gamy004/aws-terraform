@@ -97,7 +97,6 @@ module "security_groups" {
 }
 
 data "aws_subnets" "external_subnets" {
-  depends_on = [data.aws_vpc.network_vpc, data.aws_iam_account_alias.network_account_alias]
   provider   = aws.network_infra_role
   filter {
     name   = "vpc-id"
@@ -111,7 +110,6 @@ data "aws_subnets" "external_subnets" {
 }
 
 data "aws_subnets" "private_subnets" {
-  depends_on = [data.aws_vpc.workload_vpc, data.aws_iam_account_alias.workload_account_alias]
   provider   = aws.workload_infra_role
   filter {
     name   = "vpc-id"
@@ -125,7 +123,6 @@ data "aws_subnets" "private_subnets" {
 }
 
 data "aws_subnets" "public_subnets" {
-  depends_on = [data.aws_vpc.workload_vpc, data.aws_iam_account_alias.workload_account_alias]
   provider   = aws.workload_infra_role
   filter {
     name   = "vpc-id"
