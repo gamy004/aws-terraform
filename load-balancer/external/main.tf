@@ -105,22 +105,22 @@ module "external_alb" {
   tags = merge(var.tags, { Name: var.configs.name })
 }
 
-# resource "aws_cloudformation_stack" "lambda_register_targets" {
-#   name         = "StaticIPforALB-${var.configs.name}"
-#   template_url = "https://s3.amazonaws.com/exampleloadbalancer-us-east-1/blog-posts/static-ip-for-application-load-balancer/template_poplulate_NLB_TG_with_ALB_python3.json"
+resource "aws_cloudformation_stack" "lambda_register_targets" {
+  name         = "StaticIPforALB-${var.configs.name}"
+  template_url = "https://s3.amazonaws.com/exampleloadbalancer-us-east-1/blog-posts/static-ip-for-application-load-balancer/template_poplulate_NLB_TG_with_ALB_python3.json"
 
-#   capabilities = [
-#     "CAPABILITY_AUTO_EXPAND",
-#     "CAPABILITY_IAM",
-#     "CAPABILITY_NAMED_IAM",
-#   ]
+  capabilities = [
+    "CAPABILITY_AUTO_EXPAND",
+    "CAPABILITY_IAM",
+    "CAPABILITY_NAMED_IAM",
+  ]
 
-#   parameters = {
-#     "ALBListenerPort"    = "443"
-#     "InternalALBDNSName" = var.configs.internal_dns_name
-#     "NLBTargetGroupARN"  = aws_lb_target_group.target_group.arn
-#     "Region"             = "ap-southeast-1"
-#     "S3BucketName"       = "kmutt-lb-static-ip"
-#     "SameVPC"            = "False"
-#   }
-# }
+  parameters = {
+    "ALBListenerPort"    = "443"
+    "InternalALBDNSName" = var.configs.internal_dns_name
+    "NLBTargetGroupARN"  = module.external_alb.target_group_arns[0]
+    "Region"             = "ap-southeast-1"
+    "S3BucketName"       = "kmutt-lb-static-ip"
+    "SameVPC"            = "False"
+  }
+}
