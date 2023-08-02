@@ -96,26 +96,6 @@ module "security_groups" {
   tags = local.tags
 }
 
-module "database" {
-  depends_on = [module.security_groups]
-  source     = "./database"
-
-  providers = {
-    aws = aws.workload_database_role
-  }
-
-  vpc_id = data.aws_vpc.workload_vpc.id
-  configs = merge(
-    var.db_configs,
-    {
-      name                = "${var.project_name}-${var.db_configs.name}-${var.stage}"
-      monitoring_role_arn = "arn:aws:iam::${var.workload_account_id}:role/rds-monitoring-role"
-      security_group_ids  = [module.security_groups.secure_sg.id]
-    }
-  )
-  tags = local.tags
-}
-
 data "aws_subnets" "external_subnets" {
   depends_on = [data.aws_vpc.network_vpc, data.aws_iam_account_alias.network_account_alias]
   provider   = aws.network_infra_role
@@ -187,3 +167,24 @@ module "load_balancers" {
   )
   tags = local.tags
 }
+
+# Temporary Disable!!
+# module "database" {
+#   depends_on = [module.security_groups]
+#   source     = "./database"
+
+#   providers = {
+#     aws = aws.workload_database_role
+#   }
+
+#   vpc_id = data.aws_vpc.workload_vpc.id
+#   configs = merge(
+#     var.db_configs,
+#     {
+#       name                = "${var.project_name}-${var.db_configs.name}-${var.stage}"
+#       monitoring_role_arn = "arn:aws:iam::${var.workload_account_id}:role/rds-monitoring-role"
+#       security_group_ids  = [module.security_groups.secure_sg.id]
+#     }
+#   )
+#   tags = local.tags
+# }

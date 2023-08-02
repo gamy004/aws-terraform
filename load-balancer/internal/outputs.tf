@@ -7,9 +7,5 @@ output "private_alb" {
 }
 
 output "alb_private_ips" {
-  value = [
-    data.aws_network_interface.network_interface_az_a.private_ip,
-    data.aws_network_interface.network_interface_az_b.private_ip,
-    data.aws_network_interface.network_interface_az_c.private_ip,
-  ]
+  value = [for eni in data.aws_network_interface.public_network_interfaces : eni.private_ip]
 }

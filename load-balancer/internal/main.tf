@@ -58,44 +58,33 @@ module "public_alb" {
   tags = merge(var.tags, { Name: var.configs.public_alb_name })
 }
 
-data "aws_network_interface" "network_interface_az_a" {
-  depends_on = [ module.public_alb ]
-
-  filter {
-    name   = "description"
-    values = ["ELB ${module.public_alb.lb_arn_suffix}"]
-  }
-
-  filter {
-    name   = "availability-zone"
-    values = ["ap-southeast-1a"]
-  }
+locals {
+  lb_computed_name = module.public_alb.lb_arn_suffix
 }
 
-data "aws_network_interface" "network_interface_az_b" {
-  depends_on = [ module.public_alb ]
+data "aws_network_interface" "public_network_interfaces" {
+  for_each = toset(var.configs.public_alb_subnet_ids)
 
   filter {
     name   = "description"
-    values = ["ELB ${module.public_alb.lb_arn_suffix}"]
+    values = ["ELB ${lb_computed_name}"]
   }
 
   filter {
-    name   = "availability-zone"
-    values = ["ap-southeast-1b"]
+    name = "vpc-id"
+    values = [var.vpc_id]
   }
-}
-
-data "aws_network_interface" "network_interface_az_c" {
-  depends_on = [ module.public_alb ]
-  
   filter {
-    name   = "description"
-    values = ["ELB ${module.public_alb.lb_arn_suffix}"]
+    name = "status"
+    values = ["in-use"]
+  }
+  filter {
+    name = "attachment.status"
+    values = ["attached"]
   }
 
   filter {
-    name   = "availability-zone"
-    values = ["ap-southeast-1c"]
+    name   = "subnet-id"
+    values = [each.value]
   }
 }
