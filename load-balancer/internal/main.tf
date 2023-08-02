@@ -59,10 +59,6 @@ module "public_alb" {
   tags = merge(var.tags, { Name: var.configs.public_alb_name })
 }
 
-locals {
-  lb_id_name = "${module.public_alb.lb_id}|${module.public_alb.lb_arn_suffix}"
-  lb_computed_name = split("|", local.lb_id_name)[1]
-}
 
 data "aws_network_interface" "public_network_interfaces" {
   depends_on = [module.public_alb]
@@ -71,20 +67,12 @@ data "aws_network_interface" "public_network_interfaces" {
 
   filter {
     name   = "description"
-    values = ["ELB ${local.lb_computed_name}"]
+    values = ["ELB ${module.public_alb.lb_arn_suffix}"]
   }
 
   filter {
     name = "vpc-id"
-    values = [var.vpc_id]
-  }
-  filter {
-    name = "status"
-    values = ["in-use"]
-  }
-  filter {
-    name = "attachment.status"
-    values = ["attached"]
+    values = ["${var.vpc_id}"]
   }
 
   filter {
@@ -92,3 +80,35 @@ data "aws_network_interface" "public_network_interfaces" {
     values = [each.value]
   }
 }
+
+# locals {
+#   lb_id_name = "${module.public_alb.lb_id}|${module.public_alb.lb_arn_suffix}"
+#   lb_computed_name = split("|", local.lb_id_name)[1]
+# }
+
+# data "aws_network_interface" "public_network_interfaces" {
+#   for_each = toset(var.configs.public_alb_subnet_ids)
+
+#   filter {
+#     name   = "description"
+#     values = ["ELB ${local.lb_computed_name}"]
+#   }
+
+#   filter {
+#     name = "vpc-id"
+#     values = [var.vpc_id]
+#   }
+#   filter {
+#     name = "status"
+#     values = ["in-use"]
+#   }
+#   filter {
+#     name = "attachment.status"
+#     values = ["attached"]
+#   }
+
+#   filter {
+#     name   = "subnet-id"
+#     values = [each.value]
+#   }
+# }
