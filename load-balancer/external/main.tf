@@ -10,7 +10,7 @@ module "external_alb" {
   subnets         = var.configs.subnet_ids
   security_groups = var.configs.security_group_ids
   internal        = false
-
+  create_security_group = false
   http_tcp_listeners = [
     {
       port        = 80

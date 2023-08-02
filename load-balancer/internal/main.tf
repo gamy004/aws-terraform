@@ -5,12 +5,12 @@ module "private_alb" {
   name = var.configs.private_alb_name
 
   load_balancer_type = "application"
-  enable_deletion_protection = true
+  enable_deletion_protection = false
   vpc_id             = var.vpc_id
   subnets            = var.configs.private_alb_subnet_ids
   security_groups    = var.configs.private_alb_security_group_ids
   internal = true
-
+  create_security_group = false
   https_listeners = [
     {
       port               = 443
@@ -40,7 +40,8 @@ module "public_alb" {
   subnets         = var.configs.public_alb_subnet_ids
   security_groups = var.configs.public_alb_security_group_ids
   internal        = true
-  enable_deletion_protection = true
+  enable_deletion_protection = false
+  create_security_group = false
   https_listeners = [
     {
       port            = 443
@@ -64,6 +65,8 @@ locals {
 }
 
 data "aws_network_interface" "public_network_interfaces" {
+  depends_on = [module.public_alb]
+
   for_each = toset(var.configs.public_alb_subnet_ids)
 
   filter {
