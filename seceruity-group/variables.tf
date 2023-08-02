@@ -1,5 +1,10 @@
-variable "vpc_id" {
-  description = "Value of the vpc id for the database"
+variable "network_vpc_id" {
+  description = "Value of the vpc id for the load balancer in network account"
+  type        = string
+}
+
+variable "workload_vpc_id" {
+  description = "Value of the vpc id for the load balancer in workload account"
   type        = string
 }
 

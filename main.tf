@@ -76,10 +76,12 @@ module "security_groups" {
   source = "./seceruity-group"
 
   providers = {
-    aws = aws.workload_security_role
+    aws.workload = aws.workload_security_role
+    aws.network = aws.network_infra_role
   }
 
-  vpc_id = data.aws_vpc.workload_vpc.id
+  workload_vpc_id = data.aws_vpc.workload_vpc.id
+  network_vpc_id = data.aws_vpc.network_vpc.id
   configs = merge(
     var.sg_configs,
     {

@@ -37,7 +37,7 @@ resource "aws_security_group" "external_alb_sg" {
     },
   ]
   tags   = merge(var.tags, { Name = var.configs.external_alb_security_group_name })
-  vpc_id = var.vpc_id
+  vpc_id = var.workload_vpc_id
 
   timeouts {}
 }
@@ -82,7 +82,7 @@ resource "aws_security_group" "public_alb_sg" {
     },
   ]
   tags   = merge(var.tags, { Name = var.configs.public_alb_security_group_name })
-  vpc_id = var.vpc_id
+  vpc_id = var.workload_vpc_id
 
   timeouts {}
 }
@@ -122,7 +122,7 @@ resource "aws_security_group" "private_alb_sg" {
   ]
 
   tags   = merge(var.tags, { Name = var.configs.private_alb_security_group_name })
-  vpc_id = var.vpc_id
+  vpc_id = var.workload_vpc_id
 
   timeouts {}
 }
@@ -164,7 +164,7 @@ resource "aws_security_group" "app_sg" {
   ]
 
   tags   = merge(var.tags, { Name = var.configs.app_security_group_name })
-  vpc_id = var.vpc_id
+  vpc_id = var.workload_vpc_id
 
   timeouts {}
 }
@@ -225,7 +225,7 @@ resource "aws_security_group" "secure_sg" {
     },
   ]
   tags   = merge(var.tags, { Name = var.configs.secure_security_group_name })
-  vpc_id = var.vpc_id
+  vpc_id = var.workload_vpc_id
 
   timeouts {}
 }
