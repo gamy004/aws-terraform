@@ -63,6 +63,42 @@ data "dns_a_record_set" "internal_ips" {
   host = module.public_alb.lb_dns_name
 }
 
+data "aws_network_interface" "internal_eni_a" {
+
+  filter {
+    name   = "description"
+    values = ["ELB ${module.public_alb.lb_arn_suffix}"]
+  }
+
+  filter {
+    name = "vpc-id"
+    values = ["${var.vpc_id}"]
+  }
+
+  filter {
+    name   = "availability-zone"
+    values = ["ap-southeast-1a"]
+  }
+}
+
+# data "aws_network_interface" "internal_eni_a" {
+
+#   filter {
+#     name   = "description"
+#     values = ["ELB ${module.public_alb.lb_arn_suffix}"]
+#   }
+
+#   filter {
+#     name = "vpc-id"
+#     values = ["${var.vpc_id}"]
+#   }
+
+#   filter {
+#     name   = "availability-zone"
+#     values = ["ap-southeast-1a"]
+#   }
+# }
+
 # data "aws_network_interface" "public_network_interfaces" {
 #   depends_on = [module.public_alb]
 
