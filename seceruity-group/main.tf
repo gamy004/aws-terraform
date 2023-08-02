@@ -1,4 +1,5 @@
 resource "aws_security_group" "external_alb_sg" {
+  provider = aws.network
   lifecycle {
     ignore_changes = [
       description
@@ -37,12 +38,13 @@ resource "aws_security_group" "external_alb_sg" {
     },
   ]
   tags   = merge(var.tags, { Name = var.configs.external_alb_security_group_name })
-  vpc_id = var.workload_vpc_id
+  vpc_id = var.network_vpc_id
 
   timeouts {}
 }
 
 resource "aws_security_group" "public_alb_sg" {
+  provider = aws.workload
   lifecycle {
     ignore_changes = [
       description
@@ -88,6 +90,7 @@ resource "aws_security_group" "public_alb_sg" {
 }
 
 resource "aws_security_group" "private_alb_sg" {
+  provider = aws.workload
   name   = var.configs.private_alb_security_group_name
   description = var.configs.private_alb_security_group_name
   egress = [
@@ -128,6 +131,7 @@ resource "aws_security_group" "private_alb_sg" {
 }
 
 resource "aws_security_group" "app_sg" {
+  provider = aws.workload
   depends_on = [ aws_security_group.public_alb_sg ]
 
   name   = var.configs.app_security_group_name
@@ -170,6 +174,7 @@ resource "aws_security_group" "app_sg" {
 }
 
 resource "aws_security_group" "secure_sg" {
+  provider = aws.workload
   depends_on = [ aws_security_group.app_sg ]
 
   lifecycle {
