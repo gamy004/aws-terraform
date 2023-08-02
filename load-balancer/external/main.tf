@@ -1,5 +1,11 @@
+data "dns_a_record_set" "internal_ips" {
+  host = var.configs.internal_dns_name
+}
+
 # External Application Load Balancer
 module "external_alb" {
+  depends_on = [ data.dns_a_record_set.internal_ips ]
+
   source  = "terraform-aws-modules/alb/aws"
 
   name = var.configs.name
@@ -44,7 +50,7 @@ module "external_alb" {
       backend_port     = 443
       target_type      = "ip"
       targets = [
-        for ip in var.configs.internal_ips : {
+        for ip in data.dns_a_record_set.internal_ips.addrs : {
           target_id         = ip
           port              = 443
           availability_zone = "all"

@@ -36,7 +36,7 @@ module "external_lb" {
     target_group_name = var.configs.external_alb_target_group_name
     security_group_ids = var.configs.external_alb_security_group_ids
     subnet_ids = var.configs.external_alb_subnet_ids
-    internal_ips = module.internal_lb.alb_private_ips
+    # internal_ips = module.internal_lb.alb_private_ips
     internal_dns_name = module.internal_lb.public_alb.lb_dns_name
   }
   tags = var.tags

@@ -60,26 +60,26 @@ module "public_alb" {
 }
 
 
-data "aws_network_interface" "public_network_interfaces" {
-  depends_on = [module.public_alb]
+# data "aws_network_interface" "public_network_interfaces" {
+#   depends_on = [module.public_alb]
 
-  for_each = toset(var.configs.public_alb_subnet_ids)
+#   for_each = toset(var.configs.public_alb_subnet_ids)
 
-  filter {
-    name   = "description"
-    values = ["ELB ${module.public_alb.lb_arn_suffix}"]
-  }
+#   filter {
+#     name   = "description"
+#     values = ["ELB ${module.public_alb.lb_arn_suffix}"]
+#   }
 
-  filter {
-    name = "vpc-id"
-    values = ["${var.vpc_id}"]
-  }
+#   filter {
+#     name = "vpc-id"
+#     values = ["${var.vpc_id}"]
+#   }
 
-  filter {
-    name   = "subnet-id"
-    values = [each.value]
-  }
-}
+#   filter {
+#     name   = "subnet-id"
+#     values = [each.value]
+#   }
+# }
 
 # locals {
 #   lb_id_name = "${module.public_alb.lb_id}|${module.public_alb.lb_arn_suffix}"

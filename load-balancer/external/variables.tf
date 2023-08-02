@@ -15,7 +15,7 @@ variable "configs" {
     target_group_name = string
     subnet_ids = list(string)
     security_group_ids = list(string)
-    internal_ips = list(string)
+    # internal_ips = list(string)
     internal_dns_name = string
   })
   default = {
@@ -23,7 +23,7 @@ variable "configs" {
     target_group_name = "<project>-external-alb-tg-<stage>"
     subnet_ids = []
     security_group_ids = []
-    internal_ips = []
+    # internal_ips = []
     internal_dns_name = ""
   }
 }
