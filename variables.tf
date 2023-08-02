@@ -26,29 +26,29 @@ variable "stage" {
 
 variable "db_configs" {
   type = object({
-    name               = string
-    port               = number
-    min_capacity       = number
-    max_capacity       = number
-    num_instances      = number
-    subnet_group_name  = string
+    name              = string
+    port              = number
+    min_capacity      = number
+    max_capacity      = number
+    num_instances     = number
+    subnet_group_name = string
   })
   default = {
-    name               = "db"
-    port               = 5432
-    min_capacity       = 0.5
-    max_capacity       = 1
-    num_instances      = 1
-    subnet_group_name  = ""
+    name              = "db"
+    port              = 5432
+    min_capacity      = 0.5
+    max_capacity      = 1
+    num_instances     = 1
+    subnet_group_name = ""
   }
 }
 
 variable "sg_configs" {
-  type = object({})
+  type    = object({})
   default = {}
 }
 
 variable "lb_configs" {
-  type = object({})
+  type    = object({})
   default = {}
 }

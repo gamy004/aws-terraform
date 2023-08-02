@@ -1,12 +1,4 @@
 terraform {
-  cloud {
-    organization = "kmutt-4life"
-
-    workspaces {
-      name = "ct4life-dev"
-    }
-  }
-
   required_providers {
     aws = {
       source  = "hashicorp/aws"
