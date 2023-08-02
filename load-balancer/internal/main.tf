@@ -59,6 +59,8 @@ module "public_alb" {
 }
 
 data "aws_network_interface" "network_interface_az_a" {
+  depends_on = [ module.public_alb ]
+
   filter {
     name   = "description"
     values = ["ELB ${module.public_alb.lb_arn_suffix}"]
@@ -71,6 +73,8 @@ data "aws_network_interface" "network_interface_az_a" {
 }
 
 data "aws_network_interface" "network_interface_az_b" {
+  depends_on = [ module.public_alb ]
+
   filter {
     name   = "description"
     values = ["ELB ${module.public_alb.lb_arn_suffix}"]
@@ -83,6 +87,8 @@ data "aws_network_interface" "network_interface_az_b" {
 }
 
 data "aws_network_interface" "network_interface_az_c" {
+  depends_on = [ module.public_alb ]
+  
   filter {
     name   = "description"
     values = ["ELB ${module.public_alb.lb_arn_suffix}"]

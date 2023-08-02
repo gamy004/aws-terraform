@@ -9,3 +9,7 @@ output "public_alb" {
 output "private_alb" {
   value = module.internal_lb.private_alb
 }
+
+output "private_ips" {
+  value = module.internal_lb.alb_private_ips
+}
