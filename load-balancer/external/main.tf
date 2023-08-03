@@ -77,38 +77,23 @@ module "external_alb" {
       backend_protocol = "HTTPS"
       backend_port     = 443
       target_type      = "ip"
-
-      # targets = [
-      #   {
-      #     target_id         = "172.28.69.130"
+      # targets = {
+      #   "subnet-a" = {
+      #     target_id         = var.configs.internal_public_eni_ips.subnet_a,
       #     port              = 443
       #     availability_zone = "all"
       #   }
-      # ]
-
-      targets = {
-        "subnet-a" = {
-          target_id         = var.configs.internal_public_eni_ips.subnet_a,
-          port              = 443
-          availability_zone = "all"
-        }
-        "subnet-b" = {
-          target_id         = var.configs.internal_public_eni_ips.subnet_b,
-          port              = 443
-          availability_zone = "all"
-        }
-        "subnet-c" = {
-          target_id         = var.configs.internal_public_eni_ips.subnet_c,
-          port              = 443
-          availability_zone = "all"
-        }
-        # for key, value in var.configs.internal_ips :
-        #   "target-${key}" => {
-        #     target_id         = value
-        #     port              = 443
-        #     availability_zone = "all"
-        #   }
-      }
+      #   "subnet-b" = {
+      #     target_id         = var.configs.internal_public_eni_ips.subnet_b,
+      #     port              = 443
+      #     availability_zone = "all"
+      #   }
+      #   "subnet-c" = {
+      #     target_id         = var.configs.internal_public_eni_ips.subnet_c,
+      #     port              = 443
+      #     availability_zone = "all"
+      #   }
+      # }
     }
   ]
 
