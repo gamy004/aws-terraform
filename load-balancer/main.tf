@@ -11,10 +11,13 @@ module "internal_lb" {
   configs = {
     public_alb_name                = var.configs.public_alb_name
     private_alb_name               = var.configs.private_alb_name
+    private_nlb_name               = var.configs.private_nlb_name
+    private_nlb_target_group_name  = var.configs.private_nlb_target_group_name
     public_alb_security_group_ids  = var.configs.public_alb_security_group_ids
     private_alb_security_group_ids = var.configs.private_alb_security_group_ids
     public_alb_subnet_ids          = var.configs.public_alb_subnet_ids
     private_alb_subnet_ids         = var.configs.private_alb_subnet_ids
+    private_nlb_subnet_ids         = var.configs.private_nlb_subnet_ids
   }
   tags = var.tags
 }
@@ -38,9 +41,8 @@ module "external_lb" {
     # subnet_a           = var.configs.external_alb_subnet_ids[0]
     internal_lb_arn = module.internal_lb.public_alb.lb_arn_suffix
     # internal_ips = module.internal_lb.alb_private_ips
-    internal_dns_name       = module.internal_lb.public_alb.lb_dns_name
-    internal_public_eni_ips = module.internal_lb.public_eni_ips
-    allow_host_headers      = var.configs.allow_host_headers
+    internal_dns_name = module.internal_lb.public_alb.lb_dns_name
+    api_domain        = var.configs.api_domain
   }
   tags = var.tags
 }

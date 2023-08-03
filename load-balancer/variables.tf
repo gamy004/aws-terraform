@@ -30,26 +30,32 @@ variable "configs" {
     external_alb_target_group_name  = string
     public_alb_name                 = string
     private_alb_name                = string
+    private_nlb_name                = string
+    private_nlb_target_group_name   = string
     external_alb_security_group_ids = list(string)
     public_alb_security_group_ids   = list(string)
     private_alb_security_group_ids  = list(string)
     external_alb_subnet_ids         = list(string)
     public_alb_subnet_ids           = list(string)
     private_alb_subnet_ids          = list(string)
-    allow_host_headers              = list(string)
+    private_nlb_subnet_ids          = list(string)
+    api_domain                      = string
   })
   default = {
     external_alb_name               = "<project>-external-alb-<stage>"
     external_alb_target_group_name  = "<project>-external-alb-tg-<stage>"
     public_alb_name                 = "<project>-alb-<stage>"
     private_alb_name                = "<project>-nonexpose-alb-<stage>"
+    private_nlb_name                = "<project>-nonexpose-nlb-<stage>"
+    private_nlb_target_group_name   = "<project>-nonexpose-nlb-tg-<stage>"
     external_alb_security_group_ids = []
     public_alb_security_group_ids   = []
     private_alb_security_group_ids  = []
     external_alb_subnet_ids         = []
     public_alb_subnet_ids           = []
     private_alb_subnet_ids          = []
-    allow_host_headers              = ["<stage>-api-<project>.<domain>"]
+    private_nlb_subnet_ids          = []
+    api_domain                      = "<stage>-api-<project>.<domain>"
   }
 }
 

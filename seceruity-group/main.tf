@@ -51,7 +51,7 @@ resource "aws_security_group" "public_alb_sg" {
     ]
   }
 
-  name   = var.configs.public_alb_security_group_name
+  name        = var.configs.public_alb_security_group_name
   description = var.configs.public_alb_security_group_name
   egress = [
     {
@@ -74,6 +74,19 @@ resource "aws_security_group" "public_alb_sg" {
         "0.0.0.0/0",
       ]
       description      = ""
+      from_port        = 80
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      protocol         = "tcp"
+      security_groups  = []
+      self             = false
+      to_port          = 80
+    },
+    {
+      cidr_blocks = [
+        "0.0.0.0/0",
+      ]
+      description      = ""
       from_port        = 443
       ipv6_cidr_blocks = []
       prefix_list_ids  = []
@@ -90,8 +103,8 @@ resource "aws_security_group" "public_alb_sg" {
 }
 
 resource "aws_security_group" "private_alb_sg" {
-  provider = aws.workload
-  name   = var.configs.private_alb_security_group_name
+  provider    = aws.workload
+  name        = var.configs.private_alb_security_group_name
   description = var.configs.private_alb_security_group_name
   egress = [
     {
@@ -133,7 +146,7 @@ resource "aws_security_group" "private_alb_sg" {
 resource "aws_security_group" "app_sg" {
   provider = aws.workload
 
-  name   = var.configs.app_security_group_name
+  name        = var.configs.app_security_group_name
   description = var.configs.app_security_group_name
   egress = [
     {
@@ -181,7 +194,7 @@ resource "aws_security_group" "secure_sg" {
     ]
   }
 
-  name   = var.configs.secure_security_group_name
+  name        = var.configs.secure_security_group_name
   description = var.configs.secure_security_group_name
   egress = [
     {

@@ -19,29 +19,17 @@ variable "configs" {
     name              = string
     target_group_name = string
     subnet_ids        = list(string)
-    # subnet_a           = string
     security_group_ids = list(string)
-    # internal_lb_arn    = string
-    # internal_ips            = list(string)
     internal_dns_name = string
-    # internal_public_eni_ips = map(string)
-    allow_host_headers = list(string)
+    api_domain = string
   })
   default = {
     name              = "<project>-external-alb-<stage>"
     target_group_name = "<project>-external-alb-tg-<stage>"
     subnet_ids        = []
-    # subnet_a           = ""
     security_group_ids = []
-    # internal_lb_arn    = ""
-    # internal_ips       = []
     internal_dns_name = ""
-    # internal_public_eni_ips = {
-    #   subnet_a = ""
-    #   subnet_b = ""
-    #   subnet_c = ""
-    # }
-    allow_host_headers = ["<stage>-api-<project>.<domain>"]
+    api_domain = "<stage>-api-<project>.<domain>"
   }
 }
 

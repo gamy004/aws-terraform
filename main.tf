@@ -155,13 +155,16 @@ module "load_balancers" {
       external_alb_target_group_name  = "${var.project_name}-external-alb-tg-${var.stage}"
       public_alb_name                 = "${var.project_name}-alb-${var.stage}"
       private_alb_name                = "${var.project_name}-nonexpose-alb-${var.stage}"
+      private_nlb_name                = "${var.project_name}-nonexpose-nlb-${var.stage}"
+      private_nlb_target_group_name   = "${var.project_name}-nonexpose-nlb-tg-${var.stage}"
       external_alb_security_group_ids = [module.security_groups.external_alb_sg.id]
       public_alb_security_group_ids   = [module.security_groups.public_alb_sg.id]
       private_alb_security_group_ids  = [module.security_groups.private_alb_sg.id]
       external_alb_subnet_ids         = data.aws_subnets.external_subnets.ids
       public_alb_subnet_ids           = data.aws_subnets.public_subnets.ids
       private_alb_subnet_ids          = data.aws_subnets.private_subnets.ids
-      allow_host_headers              = ["${var.stage}-api-${var.project_name}.${var.domain_name}"]
+      private_nlb_subnet_ids          = data.aws_subnets.private_subnets.ids
+      api_domain                      = "${var.stage}-api-${var.project_name}.${var.domain_name}"
     }
   )
   tags = local.tags

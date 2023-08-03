@@ -11,21 +11,6 @@ module "external_alb" {
   security_groups       = var.configs.security_group_ids
   internal              = false
   create_security_group = false
-  # http_tcp_listeners = [
-  #   {
-  #     port        = 80
-  #     protocol    = "HTTP"
-  #     action_type = "redirect"
-  #     redirect = {
-  #       host        = "#{host}"
-  #       path        = "/#{path}"
-  #       port        = "443"
-  #       protocol    = "HTTPS"
-  #       query       = "#{query}"
-  #       status_code = "HTTP_301"
-  #     }
-  #   }
-  # ]
 
   https_listeners = [
     {
@@ -52,7 +37,7 @@ module "external_alb" {
       ]
 
       conditions = [{
-        host_headers = var.configs.allow_host_headers
+        host_headers = [var.configs.api_domain]
       }]
     }
   ]
