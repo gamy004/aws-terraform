@@ -27,6 +27,7 @@ module "external_lb" {
     aws = aws.network
   }
 
+  region          = var.region
   vpc_id          = var.network_vpc_id
   certificate_arn = var.network_certificate_arn
   configs = {
@@ -39,6 +40,7 @@ module "external_lb" {
     # internal_ips = module.internal_lb.alb_private_ips
     internal_dns_name       = module.internal_lb.public_alb.lb_dns_name
     internal_public_eni_ips = module.internal_lb.public_eni_ips
+    allow_host_headers      = var.configs.allow_host_headers
   }
   tags = var.tags
 }

@@ -8,6 +8,11 @@ variable "domain_name" {
   type        = string
 }
 
+variable "aws_region" {
+  description = "Value of the aws region for the infrastructure"
+  type        = string
+}
+
 variable "workload_account_id" {
   description = "Value of the workload account id for the infrastructure"
   type        = string

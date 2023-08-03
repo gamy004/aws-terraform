@@ -1,37 +1,3 @@
-# resource "aws_lb_target_group" "target_group" {
-#   name              = var.configs.target_group_name
-#   protocol          = "HTTPS"
-#   port              = 443
-#   target_type       = "ip"
-# }
-
-# resource "aws_lb_target_group_attachment" "target_group_attachments" {
-#   for_each = data.dns_a_record_set.internal_ips.addrs
-
-#   target_group_arn  = aws_lb_target_group.target_group.arn
-#   target_id         = each.value
-#   port              = 80
-#   availability_zone = "all"
-# }
-
-# data "aws_network_interface" "internal_eni_a" {
-
-#   filter {
-#     name   = "description"
-#     values = ["ELB ${var.configs.internal_lb_arn}"]
-#   }
-
-#   filter {
-#     name   = "vpc-id"
-#     values = ["${var.vpc_id}"]
-#   }
-
-#   filter {
-#     name   = "subnet-id"
-#     values = [var.configs.subnet_a]
-#   }
-# }
-
 # External Application Load Balancer
 module "external_alb" {
   source  = "terraform-aws-modules/alb/aws"
@@ -45,30 +11,37 @@ module "external_alb" {
   security_groups       = var.configs.security_group_ids
   internal              = false
   create_security_group = false
-  http_tcp_listeners = [
-    {
-      port        = 80
-      protocol    = "HTTP"
-      action_type = "redirect"
-      redirect = {
-        host        = "#{host}"
-        path        = "/#{path}"
-        port        = "443"
-        protocol    = "HTTPS"
-        query       = "#{query}"
-        status_code = "HTTP_301"
-      }
-    }
-  ]
+  # http_tcp_listeners = [
+  #   {
+  #     port        = 80
+  #     protocol    = "HTTP"
+  #     action_type = "redirect"
+  #     redirect = {
+  #       host        = "#{host}"
+  #       path        = "/#{path}"
+  #       port        = "443"
+  #       protocol    = "HTTPS"
+  #       query       = "#{query}"
+  #       status_code = "HTTP_301"
+  #     }
+  #   }
+  # ]
 
   https_listeners = [
     {
-      port               = 443
-      protocol           = "HTTPS"
-      certificate_arn    = var.certificate_arn
-      action_type        = "forward"
+      port            = 443
+      protocol        = "HTTPS"
+      certificate_arn = var.certificate_arn
+      action_type     = "forward"
+      conditions = [{
+        host_headers = var.configs.allow_host_headers
+      }]
       target_group_index = 0
     }
+  ]
+
+  https_listener_rules = [
+
   ]
 
   target_groups = [
@@ -77,28 +50,12 @@ module "external_alb" {
       backend_protocol = "HTTPS"
       backend_port     = 443
       target_type      = "ip"
-      # targets = {
-      #   "subnet-a" = {
-      #     target_id         = var.configs.internal_public_eni_ips.subnet_a,
-      #     port              = 443
-      #     availability_zone = "all"
-      #   }
-      #   "subnet-b" = {
-      #     target_id         = var.configs.internal_public_eni_ips.subnet_b,
-      #     port              = 443
-      #     availability_zone = "all"
-      #   }
-      #   "subnet-c" = {
-      #     target_id         = var.configs.internal_public_eni_ips.subnet_c,
-      #     port              = 443
-      #     availability_zone = "all"
-      #   }
-      # }
-    }
+    } # not register targets during the creation yet, use below lambda function to update target ips
   ]
 
   tags = merge(var.tags, { Name : var.configs.name })
 }
+
 
 resource "aws_cloudformation_stack" "lambda_register_targets" {
   name         = "StaticIPforALB-${var.configs.name}"
@@ -114,7 +71,7 @@ resource "aws_cloudformation_stack" "lambda_register_targets" {
     "ALBListenerPort"    = "443"
     "InternalALBDNSName" = var.configs.internal_dns_name
     "NLBTargetGroupARN"  = module.external_alb.target_group_arns[0]
-    "Region"             = "ap-southeast-1"
+    "Region"             = var.region
     "S3BucketName"       = "kmutt-lb-static-ip"
     "SameVPC"            = "False"
   }

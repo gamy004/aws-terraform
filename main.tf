@@ -77,11 +77,11 @@ module "security_groups" {
 
   providers = {
     aws.workload = aws.workload_security_role
-    aws.network = aws.network_infra_role
+    aws.network  = aws.network_infra_role
   }
 
   workload_vpc_id = data.aws_vpc.workload_vpc.id
-  network_vpc_id = data.aws_vpc.network_vpc.id
+  network_vpc_id  = data.aws_vpc.network_vpc.id
   configs = merge(
     var.sg_configs,
     {
@@ -97,7 +97,7 @@ module "security_groups" {
 }
 
 data "aws_subnets" "external_subnets" {
-  provider   = aws.network_infra_role
+  provider = aws.network_infra_role
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.network_vpc.id]
@@ -110,7 +110,7 @@ data "aws_subnets" "external_subnets" {
 }
 
 data "aws_subnets" "private_subnets" {
-  provider   = aws.workload_infra_role
+  provider = aws.workload_infra_role
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.workload_vpc.id]
@@ -123,7 +123,7 @@ data "aws_subnets" "private_subnets" {
 }
 
 data "aws_subnets" "public_subnets" {
-  provider   = aws.workload_infra_role
+  provider = aws.workload_infra_role
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.workload_vpc.id]
@@ -143,6 +143,7 @@ module "load_balancers" {
     aws.network  = aws.network_infra_role
   }
 
+  region                   = var.aws_region
   network_vpc_id           = data.aws_vpc.network_vpc.id
   network_certificate_arn  = data.aws_acm_certificate.network_certificate.arn
   workload_vpc_id          = data.aws_vpc.workload_vpc.id
@@ -160,6 +161,7 @@ module "load_balancers" {
       external_alb_subnet_ids         = data.aws_subnets.external_subnets.ids
       public_alb_subnet_ids           = data.aws_subnets.public_subnets.ids
       private_alb_subnet_ids          = data.aws_subnets.private_subnets.ids
+      allow_host_headers              = ["${var.stage}-api-${var.project_name}.${var.domain_name}"]
     }
   )
   tags = local.tags
