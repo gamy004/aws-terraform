@@ -29,19 +29,30 @@ module "external_alb" {
 
   https_listeners = [
     {
-      port            = 443
-      protocol        = "HTTPS"
+      port = 443
+      # protocol           = "HTTPS"
       certificate_arn = var.certificate_arn
-      action_type     = "forward"
-      conditions = [{
-        host_headers = var.configs.allow_host_headers
-      }]
-      target_group_index = 0
+      # action_type        = "forward"
+      # target_group_index = 0
     }
   ]
 
   https_listener_rules = [
+    {
+      https_listener_index = 0
+      priority             = 2
 
+      actions = [
+        {
+          type               = "forward"
+          target_group_index = 0
+        }
+      ]
+
+      conditions = [{
+        host_headers = var.configs.allow_host_headers
+      }]
+    }
   ]
 
   target_groups = [
