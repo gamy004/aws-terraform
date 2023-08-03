@@ -1,47 +1,16 @@
 # Private Application Load Balancer
 module "private_alb" {
-  source  = "terraform-aws-modules/alb/aws"
+  source = "terraform-aws-modules/alb/aws"
 
   name = var.configs.private_alb_name
 
-  load_balancer_type = "application"
+  load_balancer_type         = "application"
   enable_deletion_protection = false
-  vpc_id             = var.vpc_id
-  subnets            = var.configs.private_alb_subnet_ids
-  security_groups    = var.configs.private_alb_security_group_ids
-  internal = true
-  create_security_group = false
-  https_listeners = [
-    {
-      port               = 443
-      protocol           = "HTTPS"
-      certificate_arn    = var.certificate_arn
-      action_type = "fixed-response"
-      fixed_response = {
-        content_type = "text/plain"
-        status_code  = 200
-        message_body = "OK"
-      }
-    }
-  ]
-
-  tags = merge(var.tags, { Name: var.configs.private_alb_name })
-}
-
-# Public Application Load Balancer
-module "public_alb" {
-  source  = "terraform-aws-modules/alb/aws"
-
-  name = var.configs.public_alb_name
-
-  load_balancer_type = "application"
-
-  vpc_id          = var.vpc_id
-  subnets         = var.configs.public_alb_subnet_ids
-  security_groups = var.configs.public_alb_security_group_ids
-  internal        = true
-  enable_deletion_protection = false
-  create_security_group = false
+  vpc_id                     = var.vpc_id
+  subnets                    = var.configs.private_alb_subnet_ids
+  security_groups            = var.configs.private_alb_security_group_ids
+  internal                   = true
+  create_security_group      = false
   https_listeners = [
     {
       port            = 443
@@ -56,7 +25,38 @@ module "public_alb" {
     }
   ]
 
-  tags = merge(var.tags, { Name: var.configs.public_alb_name })
+  tags = merge(var.tags, { Name : var.configs.private_alb_name })
+}
+
+# Public Application Load Balancer
+module "public_alb" {
+  source = "terraform-aws-modules/alb/aws"
+
+  name = var.configs.public_alb_name
+
+  load_balancer_type = "application"
+
+  vpc_id                     = var.vpc_id
+  subnets                    = var.configs.public_alb_subnet_ids
+  security_groups            = var.configs.public_alb_security_group_ids
+  internal                   = true
+  enable_deletion_protection = false
+  create_security_group      = false
+  https_listeners = [
+    {
+      port            = 443
+      protocol        = "HTTPS"
+      certificate_arn = var.certificate_arn
+      action_type     = "fixed-response"
+      fixed_response = {
+        content_type = "text/plain"
+        status_code  = 200
+        message_body = "OK"
+      }
+    }
+  ]
+
+  tags = merge(var.tags, { Name : var.configs.public_alb_name })
 }
 
 data "dns_a_record_set" "internal_ips" {
@@ -71,7 +71,7 @@ data "aws_network_interface" "internal_eni_a" {
   }
 
   filter {
-    name = "vpc-id"
+    name   = "vpc-id"
     values = ["${var.vpc_id}"]
   }
 
@@ -81,23 +81,41 @@ data "aws_network_interface" "internal_eni_a" {
   }
 }
 
-# data "aws_network_interface" "internal_eni_a" {
+data "aws_network_interface" "internal_eni_b" {
 
-#   filter {
-#     name   = "description"
-#     values = ["ELB ${module.public_alb.lb_arn_suffix}"]
-#   }
+  filter {
+    name   = "description"
+    values = ["ELB ${module.public_alb.lb_arn_suffix}"]
+  }
 
-#   filter {
-#     name = "vpc-id"
-#     values = ["${var.vpc_id}"]
-#   }
+  filter {
+    name   = "vpc-id"
+    values = ["${var.vpc_id}"]
+  }
 
-#   filter {
-#     name   = "availability-zone"
-#     values = ["ap-southeast-1a"]
-#   }
-# }
+  filter {
+    name   = "availability-zone"
+    values = ["ap-southeast-1b"]
+  }
+}
+
+data "aws_network_interface" "internal_eni_c" {
+
+  filter {
+    name   = "description"
+    values = ["ELB ${module.public_alb.lb_arn_suffix}"]
+  }
+
+  filter {
+    name   = "vpc-id"
+    values = ["${var.vpc_id}"]
+  }
+
+  filter {
+    name   = "availability-zone"
+    values = ["ap-southeast-1c"]
+  }
+}
 
 # data "aws_network_interface" "public_network_interfaces" {
 #   depends_on = [module.public_alb]

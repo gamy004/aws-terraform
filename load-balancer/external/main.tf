@@ -14,36 +14,36 @@
 #   availability_zone = "all"
 # }
 
-data "aws_network_interface" "internal_eni_a" {
+# data "aws_network_interface" "internal_eni_a" {
 
-  filter {
-    name   = "description"
-    values = ["ELB ${var.configs.internal_lb_arn}"]
-  }
+#   filter {
+#     name   = "description"
+#     values = ["ELB ${var.configs.internal_lb_arn}"]
+#   }
 
-  filter {
-    name = "vpc-id"
-    values = ["${var.vpc_id}"]
-  }
+#   filter {
+#     name   = "vpc-id"
+#     values = ["${var.vpc_id}"]
+#   }
 
-  filter {
-    name   = "subnet-id"
-    values = [var.configs.subnet_a]
-  }
-}
+#   filter {
+#     name   = "subnet-id"
+#     values = [var.configs.subnet_a]
+#   }
+# }
 
 # External Application Load Balancer
 module "external_alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "8.7.0"
-  name = var.configs.name
+  name    = var.configs.name
 
   load_balancer_type = "application"
 
-  vpc_id          = var.vpc_id
-  subnets         = var.configs.subnet_ids
-  security_groups = var.configs.security_group_ids
-  internal        = false
+  vpc_id                = var.vpc_id
+  subnets               = var.configs.subnet_ids
+  security_groups       = var.configs.security_group_ids
+  internal              = false
   create_security_group = false
   http_tcp_listeners = [
     {
@@ -85,11 +85,21 @@ module "external_alb" {
       #     availability_zone = "all"
       #   }
       # ]
-      
+
       targets = {
-        "target-a" = {
-          target_id = data.aws_network_interface.internal_eni_a.private_ip,
-          port = 443
+        "subnet-a" = {
+          target_id         = var.configs.internal_public_eni_ips.subnet_a,
+          port              = 443
+          availability_zone = "all"
+        }
+        "subnet-b" = {
+          target_id         = var.configs.internal_public_eni_ips.subnet_b,
+          port              = 443
+          availability_zone = "all"
+        }
+        "subnet-c" = {
+          target_id         = var.configs.internal_public_eni_ips.subnet_c,
+          port              = 443
           availability_zone = "all"
         }
         # for key, value in var.configs.internal_ips :
@@ -102,7 +112,7 @@ module "external_alb" {
     }
   ]
 
-  tags = merge(var.tags, { Name: var.configs.name })
+  tags = merge(var.tags, { Name : var.configs.name })
 }
 
 resource "aws_cloudformation_stack" "lambda_register_targets" {
