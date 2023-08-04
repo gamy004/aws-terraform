@@ -148,10 +148,10 @@ module "internal_lb" {
   certificate_arn = data.aws_acm_certificate.workload_certificate.arn
   configs = {
     public_alb_name                = "${var.project_name}-alb-${var.stage}"
-    private_alb_name               = "${var.project_name}-nonexpose-alb-${var.stage}"
-    private_nlb_name               = "${var.project_name}-nonexpose-nlb-${var.stage}"
+    private_alb_name               = "${var.project_name}-internal-alb-${var.stage}"
+    private_nlb_name               = "${var.project_name}-internal-nlb-${var.stage}"
     public_alb_target_group_name   = "${var.project_name}-api-gw-tg-${var.stage}"
-    private_nlb_target_group_name  = "${var.project_name}-nonexpose-nlb-tg-${var.stage}"
+    private_nlb_target_group_name  = "${var.project_name}-internal-nlb-tg-${var.stage}"
     public_alb_security_group_ids  = [module.security_groups.public_alb_sg.id]
     private_alb_security_group_ids = [module.security_groups.private_alb_sg.id]
     public_alb_subnet_ids          = data.aws_subnets.public_subnets.ids
