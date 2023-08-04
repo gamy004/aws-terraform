@@ -192,7 +192,6 @@ module "secure_sg" {
   }
 
   vpc_id             = var.workload_vpc_id
-  create_sg          = var.configs.create
   name               = var.configs.secure_security_group_name
   description        = var.configs.secure_security_group_name
   tags               = merge(var.tags, { Name = var.configs.secure_security_group_name })
