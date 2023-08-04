@@ -162,7 +162,7 @@ module "internal_lb" {
       for environment in var.environments : [
         for application in var.applications : {
           host_header_name  = "${environment}-api-${application}.${var.domain_name}"
-          target_group_name = "${application}-ecs-tg.${environment}"
+          target_group_name = "${application}-ecs-tg-${environment}"
           tags = {
             Environment = environment
             Application = application
