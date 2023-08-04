@@ -25,6 +25,22 @@ locals {
       tags             = merge(var.tags, try(api_config.tags, {}), { Name = api_config.target_group_name })
     }
   ]
+
+  private_nlb_target_group = {
+    name             = var.configs.private_nlb_target_group_name
+    backend_protocol = "TCP"
+    backend_port     = 443
+    target_type      = "alb"
+    health_check = {
+      enabled             = true
+      interval            = 30
+      path                = "/"
+      port                = "traffic-port"
+      healthy_threshold   = 3
+      unhealthy_threshold = 3
+      timeout             = 10
+    }
+  }
 }
 
 # should link to <project>-<service>-tg-<stage>
@@ -89,28 +105,7 @@ module "private_nlb" {
     },
   ]
 
-  target_groups = [
-    {
-      name             = var.configs.private_nlb_target_group_name
-      backend_protocol = "TCP"
-      backend_port     = 443
-      target_type      = "alb"
-      targets = {
-        "private-alb" = {
-          target_id = module.private_alb.lb_arn
-        }
-      }
-      health_check = {
-        enabled             = true
-        interval            = 30
-        path                = "/"
-        port                = "traffic-port"
-        healthy_threshold   = 3
-        unhealthy_threshold = 3
-        timeout             = 10
-      }
-    }
-  ]
+  target_groups = local.private_nlb_target_groups
 
   tags = merge(var.tags, { Name : var.configs.private_nlb_name })
 }

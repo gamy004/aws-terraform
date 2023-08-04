@@ -13,3 +13,7 @@ output "private_alb_https_listener_rules" {
 output "private_alb_target_groups" {
   value = local.private_alb_target_groups
 }
+
+output "private_nlb_target_group" {
+  value = local.private_nlb_target_group
+}
