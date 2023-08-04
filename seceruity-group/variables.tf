@@ -11,33 +11,35 @@ variable "workload_vpc_id" {
 variable "configs" {
   description = "Value of the configurations for the database"
   type = object({
+    create                           = bool
     secure_security_group_name       = string
     app_security_group_name          = string
     external_alb_security_group_name = string
     public_alb_security_group_name   = string
     private_alb_security_group_name  = string
-    db_port                          = number
+    db_ports                         = list(number)
   })
   default = {
+    create                           = true
     secure_security_group_name       = "<project>-secure-sg-<stage>"
     app_security_group_name          = "<project>-app-sg-<stage>"
     external_alb_security_group_name = "<project>-external-alb-sg-<stage>"
     public_alb_security_group_name   = "<project>-alb-sg-<stage>"
     private_alb_security_group_name  = "<project>-nonexpose-alb-sg-<stage>"
-    db_port                          = 5432
+    db_ports                         = [3306, 5432]
   }
 }
 
 variable "tags" {
   description = "Value of the tags for the database"
   type = object({
-    Project     = string
-    Environment = string
-    Terraform   = bool
+    Project   = string
+    Stage     = string
+    Terraform = bool
   })
   default = {
-    Project     = ""
-    Environment = ""
-    Terraform   = true
+    Project   = ""
+    Stage     = ""
+    Terraform = true
   }
 }

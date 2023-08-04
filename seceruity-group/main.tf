@@ -185,63 +185,146 @@ resource "aws_security_group" "app_sg" {
   timeouts {}
 }
 
-resource "aws_security_group" "secure_sg" {
-  provider = aws.workload
-
-  lifecycle {
-    ignore_changes = [
-      ingress
-    ]
+module "secure_sg" {
+  source = "terraform-aws-modules/security-group/aws"
+  providers = {
+    aws = aws.workload
   }
 
-  name        = var.configs.secure_security_group_name
-  description = var.configs.secure_security_group_name
-  egress = [
-    {
-      cidr_blocks = [
-        "0.0.0.0/0",
-      ]
-      description      = ""
-      from_port        = 0
-      ipv6_cidr_blocks = []
-      prefix_list_ids  = []
-      protocol         = "-1"
-      security_groups  = []
-      self             = false
-      to_port          = 0
-    },
-  ]
-  ingress = [
-    {
-      cidr_blocks = [
-        "172.28.1.0/25",
-        "172.28.1.128/25",
-      ]
-      description      = "from vpn"
-      from_port        = var.configs.db_port
-      ipv6_cidr_blocks = []
-      prefix_list_ids  = []
-      protocol         = "tcp"
-      security_groups  = []
-      self             = false
-      to_port          = var.configs.db_port
-    },
-    {
-      cidr_blocks      = []
-      description      = ""
-      from_port        = var.configs.db_port
-      ipv6_cidr_blocks = []
-      prefix_list_ids  = []
-      protocol         = "tcp"
-      security_groups = [
-        aws_security_group.app_sg.id
-      ]
-      self    = false
-      to_port = var.configs.db_port
-    },
-  ]
-  tags   = merge(var.tags, { Name = var.configs.secure_security_group_name })
-  vpc_id = var.workload_vpc_id
+  vpc_id             = var.workload_vpc_id
+  create             = var.configs.create
+  name               = var.configs.secure_security_group_name
+  description        = var.configs.secure_security_group_name
+  tags               = merge(var.tags, { Name = var.configs.secure_security_group_name })
+  egress_cidr_blocks = ["0.0.0.0/0"]
+  computed_ingress_with_cidr_blocks = flatten([
+    for db_port in var.configs.db_ports :
+    [
+      {
+        cidr_blocks = "172.28.1.0/25"
+        description = "from vpn"
+        from_port   = db_port
+        protocol    = "tcp"
+        self        = false
+        to_port     = db_port
+      },
+      {
+        cidr_blocks = "172.28.1.128/25"
+        description = "from vpn"
+        from_port   = db_port
+        protocol    = "tcp"
+        self        = false
+        to_port     = db_port
+      },
+    ]
+  ])
 
-  timeouts {}
+  computed_ingress_with_source_security_group_id = [
+    for db_port in var.configs.db_ports :
+    {
+      from_port                = db_port
+      protocol                 = "tcp"
+      self                     = false
+      to_port                  = db_port
+      source_security_group_id = aws_security_group.app_sg.id
+    }
+  ]
 }
+
+# resource "aws_security_group" "secure_sg" {
+#   provider = aws.workload
+
+#   lifecycle {
+#     ignore_changes = [
+#       ingress
+#     ]
+#   }
+
+#   name        = var.configs.secure_security_group_name
+#   description = var.configs.secure_security_group_name
+#   egress = [
+#     {
+#       cidr_blocks = [
+#         "0.0.0.0/0",
+#       ]
+#       description      = ""
+#       from_port        = 0
+#       ipv6_cidr_blocks = []
+#       prefix_list_ids  = []
+#       protocol         = "-1"
+#       security_groups  = []
+#       self             = false
+#       to_port          = 0
+#     },
+#   ]
+
+#   dynamic "ingress" {
+#     for_each = var.configs.db_ports
+#     content {
+#       cidr_blocks = [
+#         "172.28.1.0/25",
+#         "172.28.1.128/25",
+#       ]
+#       description      = "from vpn"
+#       from_port        = ingress.value
+#       ipv6_cidr_blocks = []
+#       prefix_list_ids  = []
+#       protocol         = "tcp"
+#       security_groups  = []
+#       self             = false
+#       to_port          = ingress.value
+#     }
+#   }
+
+#   dynamic "ingress" {
+#     for_each = var.configs.db_ports
+#     content {
+#       cidr_blocks      = []
+#       description      = ""
+#       from_port        = ingress.value
+#       ipv6_cidr_blocks = []
+#       prefix_list_ids  = []
+#       protocol         = "tcp"
+#       security_groups = [
+#         aws_security_group.app_sg.id
+#       ]
+#       self    = false
+#       to_port = ingress.value
+#     }
+#   }
+
+#   # ingress = [
+#   #   {
+#   #     cidr_blocks = [
+#   #       "172.28.1.0/25",
+#   #       "172.28.1.128/25",
+#   #     ]
+#   #     description      = "from vpn"
+#   #     from_port        = var.configs.db_port
+#   #     ipv6_cidr_blocks = []
+#   #     prefix_list_ids  = []
+#   #     protocol         = "tcp"
+#   #     security_groups  = []
+#   #     self             = false
+#   #     to_port          = var.configs.db_port
+#   #   },
+#   #   {
+#   #     cidr_blocks      = []
+#   #     description      = ""
+#   #     from_port        = var.configs.db_port
+#   #     ipv6_cidr_blocks = []
+#   #     prefix_list_ids  = []
+#   #     protocol         = "tcp"
+#   #     security_groups = [
+#   #       aws_security_group.app_sg.id
+#   #     ]
+#   #     self    = false
+#   #     to_port = var.configs.db_port
+#   #   },
+#   # ]
+
+#   tags   = merge(var.tags, { Name = var.configs.secure_security_group_name })
+#   vpc_id = var.workload_vpc_id
+
+#   timeouts {}
+# }

@@ -62,13 +62,13 @@ variable "configs" {
 variable "tags" {
   description = "Value of the tags for the load balancer"
   type = object({
-    Project     = string
-    Environment = string
-    Terraform   = bool
+    Project   = string
+    Stage     = string
+    Terraform = bool
   })
   default = {
-    Project     = ""
-    Environment = ""
-    Terraform   = true
+    Project   = ""
+    Stage     = ""
+    Terraform = true
   }
 }
