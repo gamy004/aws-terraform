@@ -136,39 +136,62 @@ data "aws_subnets" "public_subnets" {
   }
 }
 
-# module "load_balancers" {
-#   source = "./load-balancer"
+# Internal Load Balancer
+module "internal_lb" {
+  source = "./internal-load-balancer"
+
+  providers = {
+    aws = aws.workload_infra_role
+  }
+
+  vpc_id          = data.aws_vpc.workload_vpc.id
+  certificate_arn = data.aws_acm_certificate.workload_certificate.arn
+  configs = {
+    public_alb_name                = "${var.project_name}-alb-${var.stage}"
+    private_alb_name               = "${var.project_name}-nonexpose-alb-${var.stage}"
+    private_nlb_name               = "${var.project_name}-nonexpose-nlb-${var.stage}"
+    public_alb_target_group_name   = "${var.project_name}-api-gw-tg-${var.stage}"
+    private_nlb_target_group_name  = "${var.project_name}-nonexpose-nlb-tg-${var.stage}"
+    public_alb_security_group_ids  = [module.security_groups.public_alb_sg.id]
+    private_alb_security_group_ids = [module.security_groups.private_alb_sg.id]
+    public_alb_subnet_ids          = data.aws_subnets.public_subnets.ids
+    private_alb_subnet_ids         = data.aws_subnets.private_subnets.ids
+    private_nlb_subnet_ids         = data.aws_subnets.private_subnets.ids
+
+    api_configs = flatten([
+      for environment in var.environments : [
+        for application in var.applications : {
+          host_header_name  = "${environment}-api-${application}.${var.domain_name}"
+          target_group_name = "${application}-ecs-tg.${environment}"
+          tags = {
+            Environment = environment
+            Application = application
+          }
+        }
+      ]
+    ])
+  }
+  tags = local.tags
+}
+
+## External Load Balancer
+# module "external_lb" {
+#   source = "./external-load-balancer"
 
 #   providers = {
-#     aws.workload = aws.workload_infra_role
-#     aws.network  = aws.network_infra_role
+#     aws = aws.network_infra_role
 #   }
 
-#   region                   = var.aws_region
-#   network_vpc_id           = data.aws_vpc.network_vpc.id
-#   network_certificate_arn  = data.aws_acm_certificate.network_certificate.arn
-#   workload_vpc_id          = data.aws_vpc.workload_vpc.id
-#   workload_certificate_arn = data.aws_acm_certificate.workload_certificate.arn
-#   configs = merge(
-#     var.lb_configs,
-#     {
-#       create                          = var.configs.lb_configs.create
-#       external_alb_name               = "${var.project_name}-external-alb-${var.stage}"
-#       external_alb_target_group_name  = "${var.project_name}-external-alb-tg-${var.stage}"
-#       public_alb_name                 = "${var.project_name}-alb-${var.stage}"
-#       private_alb_name                = "${var.project_name}-nonexpose-alb-${var.stage}"
-#       private_nlb_name                = "${var.project_name}-nonexpose-nlb-${var.stage}"
-#       private_nlb_target_group_name   = "${var.project_name}-nonexpose-nlb-tg-${var.stage}"
-#       external_alb_security_group_ids = [module.security_groups.external_alb_sg.id]
-#       public_alb_security_group_ids   = [module.security_groups.public_alb_sg.id]
-#       private_alb_security_group_ids  = [module.security_groups.private_alb_sg.id]
-#       external_alb_subnet_ids         = data.aws_subnets.external_subnets.ids
-#       public_alb_subnet_ids           = data.aws_subnets.public_subnets.ids
-#       private_alb_subnet_ids          = data.aws_subnets.private_subnets.ids
-#       private_nlb_subnet_ids          = data.aws_subnets.private_subnets.ids
-#       api_domain                      = "${var.stage}-api-${var.project_name}.${var.domain_name}"
-#     }
-#   )
+#   region          = var.aws_region
+#   vpc_id          = data.aws_vpc.network_vpc.id
+#   certificate_arn = data.aws_acm_certificate.network_certificate.arn
+#   configs = {
+#     name                         = "${var.project_name}-external-alb-${var.stage}"
+#     target_group_name            = "${var.project_name}-external-alb-tg-${var.stage}"
+#     security_group_ids           = [module.security_groups.external_alb_sg.id]
+#     subnet_ids                   = data.aws_subnets.external_subnets.ids
+#     internal_public_alb_dns_name = module.internal_lb.public_alb.lb_dns_name
+#   }
 #   tags = local.tags
 # }
 

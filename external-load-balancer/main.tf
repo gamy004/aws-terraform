@@ -50,6 +50,7 @@ module "external_alb" {
       backend_protocol = "HTTPS"
       backend_port     = 443
       target_type      = "ip"
+      tags             = merge(var.tags, { Name : var.configs.target_group_name })
     } # not register targets during the creation yet, use below lambda function to update target ips
   ]
 
@@ -69,7 +70,7 @@ resource "aws_cloudformation_stack" "lambda_register_targets" {
 
   parameters = {
     "ALBListenerPort"    = "443"
-    "InternalALBDNSName" = var.configs.internal_dns_name
+    "InternalALBDNSName" = var.configs.internal_public_alb_dns_name
     "NLBTargetGroupARN"  = module.external_alb.target_group_arns[0]
     "Region"             = var.region
     "S3BucketName"       = "kmutt-lb-static-ip"

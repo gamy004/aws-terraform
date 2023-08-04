@@ -16,20 +16,18 @@ variable "certificate_arn" {
 variable "configs" {
   description = "Value of the configurations for the load balancer"
   type = object({
-    name               = string
-    target_group_name  = string
-    subnet_ids         = list(string)
-    security_group_ids = list(string)
-    internal_dns_name  = string
-    api_domain         = string
+    name                         = string
+    target_group_name            = string
+    subnet_ids                   = list(string)
+    security_group_ids           = list(string)
+    internal_public_alb_dns_name = string
   })
   default = {
-    name               = "<project>-external-alb-<stage>"
-    target_group_name  = "<project>-external-alb-tg-<stage>"
-    subnet_ids         = []
-    security_group_ids = []
-    internal_dns_name  = ""
-    api_domain         = "<stage>-api-<project>.<domain>"
+    name                         = "<project>-external-alb-<stage>"
+    target_group_name            = "<project>-external-alb-tg-<stage>"
+    subnet_ids                   = []
+    security_group_ids           = []
+    internal_public_alb_dns_name = ""
   }
 }
 

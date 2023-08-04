@@ -185,54 +185,6 @@ resource "aws_security_group" "app_sg" {
   timeouts {}
 }
 
-# module "secure_sg" {
-#   source = "terraform-aws-modules/security-group/aws"
-#   providers = {
-#     aws = aws.workload
-#   }
-
-#   vpc_id             = var.workload_vpc_id
-#   name               = var.configs.secure_security_group_name
-#   description        = var.configs.secure_security_group_name
-#   tags               = merge(var.tags, { Name = var.configs.secure_security_group_name })
-#   egress_cidr_blocks = ["0.0.0.0/0"]
-#   computed_ingress_with_cidr_blocks = flatten([
-#     for db_port in var.configs.db_ports :
-#     [
-#       {
-#         cidr_blocks = "172.28.1.0/25"
-#         description = "from vpn"
-#         from_port   = db_port
-#         protocol    = "tcp"
-#         self        = false
-#         to_port     = db_port
-#       },
-#       {
-#         cidr_blocks = "172.28.1.128/25"
-#         description = "from vpn"
-#         from_port   = db_port
-#         protocol    = "tcp"
-#         self        = false
-#         to_port     = db_port
-#       },
-#     ]
-#   ])
-#   number_of_computed_ingress_with_cidr_blocks = length(var.configs.db_ports) * 2
-
-#   computed_ingress_with_source_security_group_id = [
-#     for db_port in var.configs.db_ports :
-#     {
-#       from_port                = db_port
-#       protocol                 = "tcp"
-#       self                     = false
-#       to_port                  = db_port
-#       source_security_group_id = aws_security_group.app_sg.id
-#     }
-#   ]
-
-#   number_of_computed_ingress_with_source_security_group_id = length(var.configs.db_ports)
-# }
-
 resource "aws_security_group" "secure_sg" {
   provider = aws.workload
 
