@@ -105,7 +105,28 @@ module "private_nlb" {
     },
   ]
 
-  target_groups = local.private_nlb_target_groups
+  target_groups = [
+    {
+      name             = var.configs.private_nlb_target_group_name
+      backend_protocol = "TCP"
+      backend_port     = 443
+      target_type      = "alb"
+      targets = {
+        "private-alb" = {
+          target_id = module.private_alb.lb_arn
+        }
+      }
+      health_check = {
+        enabled             = true
+        interval            = 30
+        path                = "/"
+        port                = "traffic-port"
+        healthy_threshold   = 3
+        unhealthy_threshold = 3
+        timeout             = 10
+      }
+    }
+  ]
 
   tags = merge(var.tags, { Name : var.configs.private_nlb_name })
 }
