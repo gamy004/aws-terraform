@@ -29,6 +29,18 @@ variable "stage" {
   default     = "default"
 }
 
+variable "environments" {
+  description = "List of value of the environment names for the infrastructure"
+  type        = list(string)
+  default     = ["env-1", "env-2"]
+}
+
+variable "applications" {
+  description = "List of value of the application names for the infrastructure"
+  type        = list(string)
+  default     = ["app-1", "app-2"]
+}
+
 variable "db_configs" {
   type = object({
     name              = string
