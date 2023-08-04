@@ -13,6 +13,7 @@ locals {
       conditions = [{
         host_headers = [api_config.host_header_name]
       }]
+      tags = merge(var.tags, try(api_config.tags, {}), { Name = api_config.target_group_name })
     }
   ]
 
