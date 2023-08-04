@@ -15,5 +15,5 @@ output "app_sg" {
 }
 
 output "secure_sg" {
-  value = module.secure_sg
+  value = aws_security_group.secure_sg
 }
