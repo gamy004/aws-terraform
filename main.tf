@@ -3,6 +3,7 @@ locals {
     Project     = var.project_name
     Environment = var.stage
     Terraform   = true
+    Version     = 2
   }
 }
 
