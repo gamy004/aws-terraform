@@ -217,6 +217,7 @@ module "secure_sg" {
       },
     ]
   ])
+  number_of_computed_ingress_with_cidr_blocks = length(var.configs.db_ports) * 2
 
   computed_ingress_with_source_security_group_id = [
     for db_port in var.configs.db_ports :
@@ -228,6 +229,8 @@ module "secure_sg" {
       source_security_group_id = aws_security_group.app_sg.id
     }
   ]
+
+  number_of_computed_ingress_with_source_security_group_id = length(var.configs.db_ports)
 }
 
 # resource "aws_security_group" "secure_sg" {
