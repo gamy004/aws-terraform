@@ -61,19 +61,11 @@ variable "db_configs" {
 }
 
 variable "sg_configs" {
-  type = object({
-    create = bool
-  })
-  default = {
-    create = false
-  }
+  type    = object({})
+  default = {}
 }
 
 variable "lb_configs" {
-  type = object({
-    create = bool
-  })
-  default = {
-    create = false
-  }
+  type    = object({})
+  default = {}
 }

@@ -85,7 +85,6 @@ module "security_groups" {
   configs = merge(
     var.sg_configs,
     {
-      create                           = var.sg_configs.create
       secure_security_group_name       = "${var.project_name}-secure-sg-${var.stage}"
       app_security_group_name          = "${var.project_name}-app-sg-${var.stage}"
       external_alb_security_group_name = "${var.project_name}-external-alb-sg-${var.stage}"

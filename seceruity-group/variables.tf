@@ -11,7 +11,6 @@ variable "workload_vpc_id" {
 variable "configs" {
   description = "Value of the configurations for the database"
   type = object({
-    create                           = bool
     secure_security_group_name       = string
     app_security_group_name          = string
     external_alb_security_group_name = string
@@ -20,7 +19,6 @@ variable "configs" {
     db_ports                         = list(number)
   })
   default = {
-    create                           = true
     secure_security_group_name       = "<project>-secure-sg-<stage>"
     app_security_group_name          = "<project>-app-sg-<stage>"
     external_alb_security_group_name = "<project>-external-alb-sg-<stage>"
