@@ -1,3 +1,3 @@
-output "main_api_gateway" {
-  value = module.api_gateway.main_api_gateway
-}
+# output "main_api_gateway" {
+#   value = module.main_api_gateway
+# }

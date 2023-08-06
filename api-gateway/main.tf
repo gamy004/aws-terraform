@@ -1,5 +1,5 @@
-module "api_gateway" "main_api_gateway" {
-  source = "../../"
+module "api_gateway" {
+  source = "terraform-aws-modules/apigateway-v2/aws"
 
   name          = var.configs.name
   description   = var.configs.name
@@ -11,6 +11,7 @@ module "api_gateway" "main_api_gateway" {
     allow_origins = ["*"]
   }
 
+  create_vpc_link             = false
   create_api_domain_name      = false
   domain_name                 = var.domain_name
   domain_name_certificate_arn = var.certificate_arn
@@ -30,10 +31,18 @@ module "api_gateway" "main_api_gateway" {
 
     "GET /" = {
       connection_type    = "VPC_LINK"
-      vpc_link           = "my-vpc"
-      integration_uri    = var.public_alb_http_tcp_listern_arn
+      vpc_link           = "${var.configs.vpc_link_name}"
+      integration_uri    = var.configs.public_alb_http_tcp_listern_arn
       integration_type   = "HTTP_PROXY"
-      integration_method = "ANY"
+      integration_method = "GET"
+    }
+
+    "GET /{proxy+}" = {
+      connection_type    = "VPC_LINK"
+      vpc_link           = "${var.configs.vpc_link_name}"
+      integration_uri    = var.configs.public_alb_http_tcp_listern_arn
+      integration_type   = "HTTP_PROXY"
+      integration_method = "GET"
     }
 
     # "$default" = {
@@ -41,29 +50,20 @@ module "api_gateway" "main_api_gateway" {
     # }
   }
 
-  vpc_links = {
-    my-vpc = {
-      name               = "example"
-      security_group_ids = [module.api_gateway_security_group.security_group_id]
-      subnet_ids         = module.vpc.public_subnets
-    }
-  }
+  # vpc_links = {
+  #   main_vpc_link = {
+  #     name        = "${var.configs.vpc_link_name}"
+  #     target_arns = [var.configs.public_alb_http_tcp_listern_arn]
+  #     # security_group_ids = ["${var.configs.private_nlb_}"]
+  #     # subnet_ids         = module.vpc.public_subnets
+  #   }
+  # }
 
-  tags = {
-    Name = "private-api"
-  }
+  tags = merge(var.tags, { Name = var.configs.name })
 }
 
-module "api_gateway_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
-
-  name        = "api-gateway-sg-${random_pet.this.id}"
-  description = "API Gateway group for example usage"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress_cidr_blocks = ["0.0.0.0/0"]
-  ingress_rules       = ["http-80-tcp"]
-
-  egress_rules = ["all-all"]
+resource "aws_api_gateway_vpc_link" "vpc_link_to_nlb" {
+  name        = var.configs.vpc_link_name
+  description = var.configs.vpc_link_name
+  target_arns = [var.configs.public_alb_http_tcp_listern_arn]
 }

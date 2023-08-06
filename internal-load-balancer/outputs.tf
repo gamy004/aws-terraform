@@ -9,11 +9,3 @@ output "private_alb" {
 output "private_nlb" {
   value = module.private_nlb
 }
-
-output "private_alb_https_listener_rules" {
-  value = local.private_alb_https_listener_rules
-}
-
-output "private_alb_target_groups" {
-  value = local.private_alb_target_groups
-}
