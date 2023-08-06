@@ -31,7 +31,7 @@ module "api_gateway" {
 
     "GET /" = {
       connection_type    = "VPC_LINK"
-      vpc_link           = "${var.configs.vpc_link_name}"
+      connection_id      = aws_api_gateway_vpc_link.vpc_link_to_nlb.id
       integration_uri    = var.configs.public_alb_http_tcp_listern_arn
       integration_type   = "HTTP_PROXY"
       integration_method = "GET"
@@ -39,25 +39,12 @@ module "api_gateway" {
 
     "GET /{proxy+}" = {
       connection_type    = "VPC_LINK"
-      vpc_link           = "${var.configs.vpc_link_name}"
+      connection_id      = aws_api_gateway_vpc_link.vpc_link_to_nlb.id
       integration_uri    = var.configs.public_alb_http_tcp_listern_arn
       integration_type   = "HTTP_PROXY"
       integration_method = "GET"
     }
-
-    # "$default" = {
-    #   lambda_arn = module.lambda_function.lambda_function_arn
-    # }
   }
-
-  # vpc_links = {
-  #   main_vpc_link = {
-  #     name        = "${var.configs.vpc_link_name}"
-  #     target_arns = [var.configs.public_alb_http_tcp_listern_arn]
-  #     # security_group_ids = ["${var.configs.private_nlb_}"]
-  #     # subnet_ids         = module.vpc.public_subnets
-  #   }
-  # }
 
   tags = merge(var.tags, { Name = var.configs.name })
 }
@@ -65,5 +52,5 @@ module "api_gateway" {
 resource "aws_api_gateway_vpc_link" "vpc_link_to_nlb" {
   name        = var.configs.vpc_link_name
   description = var.configs.vpc_link_name
-  target_arns = [var.configs.public_alb_http_tcp_listern_arn]
+  target_arns = [var.configs.private_nlb_target_group_arn]
 }
