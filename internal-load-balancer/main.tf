@@ -1,8 +1,8 @@
 locals {
   private_alb_https_listener_rules = [
     for index, api_config in var.configs.api_configs : {
-      http_tcp_listener_index = 0
-      priority                = index + 1
+      https_listener_index = 0
+      priority             = index + 1
       actions = [
         {
           type               = "forward"
