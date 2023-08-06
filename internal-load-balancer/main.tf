@@ -1,17 +1,5 @@
 locals {
-  private_alb_http_tcp_listeners = [
-    {
-      port        = 80
-      protocol    = "HTTP"
-      action_type = "fixed-response"
-      fixed_response = {
-        content_type = "text/plain"
-        status_code  = 404
-      }
-    }
-  ]
-
-  private_alb_http_tcp_listener_rules = [
+  private_alb_https_listener_rules = [
     for index, api_config in var.configs.api_configs : {
       http_tcp_listener_index = 0
       priority                = index + 1
@@ -86,24 +74,20 @@ module "private_alb" {
   internal                   = true
   create_security_group      = false
 
-  http_tcp_listeners = local.private_alb_http_tcp_listeners
+  https_listeners = [
+    {
+      port            = 443
+      protocol        = "HTTPS"
+      certificate_arn = var.certificate_arn
+      action_type     = "fixed-response"
+      fixed_response = {
+        content_type = "text/plain"
+        status_code  = 200
+      }
+    }
+  ]
 
-  # https_listeners = [
-  #   {
-  #     port            = 443
-  #     protocol        = "HTTPS"
-  #     certificate_arn = var.certificate_arn
-  #     action_type     = "fixed-response"
-  #     fixed_response = {
-  #       content_type = "text/plain"
-  #       status_code  = 200
-  #     }
-  #   }
-  # ]
-
-  # https_listener_rules = local.private_alb_http_tcp_listener_rules
-
-  http_tcp_listener_rules = local.private_alb_http_tcp_listener_rules
+  https_listener_rules = local.private_alb_https_listener_rules
 
   target_groups = local.private_alb_target_groups
 
