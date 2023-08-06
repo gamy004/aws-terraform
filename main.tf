@@ -195,24 +195,24 @@ module "internal_lb" {
 # }
 
 ## API Gateway
-# module "api_gateway" {
-#   source = "./api-gateway"
+module "api_gateway" {
+  source = "./api-gateway"
 
-#   providers = {
-#     aws = aws.workload_infra_role
-#   }
+  providers = {
+    aws = aws.workload_infra_role
+  }
 
-#   vpc_id          = data.aws_vpc.workload_vpc.id
-#   certificate_arn = data.aws_acm_certificate.workload_certificate.arn
-#   domain_name     = var.domain_name
-#   configs = {
-#     name                            = "${var.project_name}-api-gw-${var.stage}"
-#     vpc_link_name                   = "${var.project_name}-vpclink-${var.stage}"
-#     public_alb_http_tcp_listern_arn = module.internal_lb.public_alb.http_tcp_listener_arns[0]
-#     private_nlb_target_group_arn    = module.internal_lb.private_nlb.lb_arn
-#   }
-#   tags = local.tags
-# }
+  vpc_id          = data.aws_vpc.workload_vpc.id
+  certificate_arn = data.aws_acm_certificate.workload_certificate.arn
+  domain_name     = var.domain_name
+  configs = {
+    name                            = "${var.project_name}-api-gw-${var.stage}"
+    vpc_link_name                   = "${var.project_name}-vpclink-${var.stage}"
+    public_alb_http_tcp_listern_arn = module.internal_lb.public_alb.http_tcp_listener_arns[0]
+    private_nlb_target_group_arn    = module.internal_lb.private_nlb.lb_arn
+  }
+  tags = local.tags
+}
 
 ## Database
 # module "database" {
