@@ -3,37 +3,6 @@ data "aws_vpc_endpoint" "api_gateway_endpoint" {
   service_name = "com.amazonaws.${var.region}.execute-api"
 }
 
-resource "aws_api_gateway_rest_api" "api" {
-  name        = var.configs.name
-  description = "THe API Gateway for ${var.configs.name}"
-  endpoint_configuration {
-    types            = ["PRIVATE"]
-    vpc_endpoint_ids = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
-  }
-
-  body = jsonencode({
-    openapi = "3.0.1"
-    info = {
-      title   = "example"
-      version = "1.0"
-    }
-    paths = {
-      "/" = {
-        get = {
-          x-amazon-apigateway-integration = {
-            httpMethod           = "GET"
-            payloadFormatVersion = "1.0"
-            type                 = "HTTP_PROXY"
-            uri                  = "https://ip-ranges.amazonaws.com/ip-ranges.json"
-          }
-        }
-      }
-    }
-  })
-
-  tags = merge(var.tags, { Name = var.configs.name })
-}
-
 data "aws_iam_policy_document" "api_access_policy" {
   statement {
     effect = "Allow"
@@ -54,9 +23,37 @@ data "aws_iam_policy_document" "api_access_policy" {
   }
 }
 
-resource "aws_api_gateway_rest_api_policy" "api_policy" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  policy      = data.aws_iam_policy_document.api_access_policy.json
+resource "aws_api_gateway_rest_api" "api" {
+  name        = var.configs.name
+  description = "THe API Gateway for ${var.configs.name}"
+  endpoint_configuration {
+    types            = ["PRIVATE"]
+    vpc_endpoint_ids = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
+  }
+  put_rest_api_mode = "merge"
+  body = jsonencode({
+    openapi = "3.0.1"
+    info = {
+      title   = "example"
+      version = "1.0"
+    }
+    paths = {
+      "/" = {
+        get = {
+          x-amazon-apigateway-integration = {
+            httpMethod           = "GET"
+            payloadFormatVersion = "1.0"
+            type                 = "HTTP_PROXY"
+            uri                  = "https://ip-ranges.amazonaws.com/ip-ranges.json"
+          }
+        }
+      }
+    }
+  })
+
+  policy = data.aws_iam_policy_document.api_access_policy.json
+
+  tags = merge(var.tags, { Name = var.configs.name })
 }
 
 resource "aws_api_gateway_domain_name" "api_domain" {
