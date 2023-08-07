@@ -72,6 +72,12 @@ data "aws_acm_certificate" "network_certificate" {
   most_recent = true
 }
 
+data "aws_iam_role" "api_gateway_cloudwatch_role" {
+  provider = aws.workload_infra_role
+
+  name = "kmutt-api-gateway-logs-role-${var.stage}"
+}
+
 module "security_groups" {
   source = "./seceruity-group"
 
@@ -202,9 +208,11 @@ module "api_gateway" {
     aws = aws.workload_infra_role
   }
 
-  vpc_id          = data.aws_vpc.workload_vpc.id
-  certificate_arn = data.aws_acm_certificate.workload_certificate.arn
-  domain_name     = var.domain_name
+  region              = var.aws_region
+  vpc_id              = data.aws_vpc.workload_vpc.id
+  domain_name         = var.domain_name
+  cloudwatch_role_arn = data.aws_iam_role.api_gateway_cloudwatch_role.arn
+  certificate_arn     = data.aws_acm_certificate.workload_certificate.arn
   configs = {
     name                            = "${var.project_name}-api-gw-${var.stage}"
     vpc_link_name                   = "${var.project_name}-vpclink-${var.stage}"

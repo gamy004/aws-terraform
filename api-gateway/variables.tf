@@ -1,3 +1,8 @@
+variable "region" {
+  description = "Value of the region for the api gateway"
+  type        = string
+}
+
 variable "vpc_id" {
   description = "Value of the vpc id for the api gateway"
   type        = string
@@ -5,6 +10,11 @@ variable "vpc_id" {
 
 variable "domain_name" {
   description = "Value of the domain name associated with the api gateway"
+  type        = string
+}
+
+variable "cloudwatch_role_arn" {
+  description = "Value of the cloudwatch role arn for the api gateway"
   type        = string
 }
 
