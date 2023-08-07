@@ -95,6 +95,11 @@ resource "aws_api_gateway_integration" "proxy_options" {
   resource_id = aws_api_gateway_resource.proxy.id
   http_method = aws_api_gateway_method.proxy_options.http_method
   type        = "MOCK"
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
 }
 
 data "aws_iam_policy_document" "api_access_policy" {
