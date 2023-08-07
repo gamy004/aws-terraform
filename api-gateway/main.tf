@@ -35,10 +35,13 @@ resource "aws_api_gateway_rest_api" "api" {
 
 data "aws_iam_policy_document" "api_access_policy" {
   statement {
-    effect     = "Allow"
-    principals = "*"
-    actions    = ["execute-api:Invoke"]
-    resources  = ["${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"]
+    effect = "Allow"
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    actions   = ["execute-api:Invoke"]
+    resources = ["${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"]
     condition {
       test     = "StringEquals"
       variable = "aws:sourceVpce"
