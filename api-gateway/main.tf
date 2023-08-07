@@ -11,64 +11,31 @@ resource "aws_api_gateway_rest_api" "api" {
     types            = ["PRIVATE"]
     vpc_endpoint_ids = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
   }
-  body = jsonencode({
-    openapi = "3.0.1"
-    info = {
-      title   = "${var.configs.name}"
-      version = "${timestamp()}"
-    }
-    paths = {
-      "/{proxy+}" : {
-        "options" : {
-          "parameters" : [{
-            "name" : "proxy",
-            "in" : "path",
-            "required" : true,
-            "schema" : {
-              "type" : "string"
-            }
-          }],
-          "responses" : {
-            "200" : {
-              "description" : "200 response",
-              "headers" : {
-                "Access-Control-Allow-Origin" : {
-                  "schema" : {
-                    "type" : "string"
-                  }
-                },
-                "Access-Control-Allow-Methods" : {
-                  "schema" : {
-                    "type" : "string"
-                  }
-                },
-                "Access-Control-Allow-Headers" : {
-                  "schema" : {
-                    "type" : "string"
-                  }
-                }
-              },
-              "content" : {}
-            }
-          }
-        },
-        "x-amazon-apigateway-any-method" : {
-          "parameters" : [{
-            "name" : "proxy",
-            "in" : "path",
-            "required" : true,
-            "schema" : {
-              "type" : "string"
-            }
-          }]
-        }
-      },
-      "/" : {
-        "get" : {}
-      }
-    }
-  })
   tags = merge(var.tags, { Name = var.configs.name })
+}
+
+resource "aws_api_gateway_resource" "api_resource_proxy" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "{+proxy}"
+}
+
+resource "aws_api_gateway_method" "api_method" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.api_resource_proxy.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "api_integration_proxy" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.api_resource_proxy.id
+  uri                     = var.configs.public_alb_http_tcp_listern_arn
+  http_method             = aws_api_gateway_method.api_method.http_method
+  type                    = "HTTP_PROXY"
+  integration_http_method = "ANY"
+  connection_type         = "VPC_LINK"
+  connection_id           = aws_api_gateway_vpc_link.vpc_link_to_nlb.id
 }
 
 data "aws_iam_policy_document" "api_access_policy" {
