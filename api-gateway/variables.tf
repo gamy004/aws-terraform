@@ -30,12 +30,26 @@ variable "configs" {
     vpc_link_name                   = string
     public_alb_http_tcp_listern_arn = string
     private_nlb_target_group_arn    = string
+    api_configs = list(object({
+      host_header_name = string
+      tags = object({
+        Environment = string
+        Application = string
+      })
+    }))
   })
   default = {
     name                            = "<project>-api-gw-<stage>"
     vpc_link_name                   = "<project>-vpclink-<stage>"
     public_alb_http_tcp_listern_arn = ""
     private_nlb_target_group_arn    = ""
+    api_configs = [{
+      host_header_name = "<environment>-api-<application>.<domain>"
+      tags = {
+        Environment = "<environment>"
+        Application = "<>"
+      }
+    }]
   }
 }
 

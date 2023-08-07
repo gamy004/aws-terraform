@@ -4,6 +4,19 @@ locals {
     Stage     = var.stage
     Terraform = true
   }
+
+  api_configs = flatten([
+    for environment in var.environments : [
+      for application in var.applications : {
+        host_header_name  = "${environment}-api-${application}.${var.domain_name}"
+        target_group_name = "${application}-ecs-tg-${environment}"
+        tags = {
+          Environment = environment
+          Application = application
+        }
+      }
+    ]
+  ])
 }
 
 provider "aws" {
@@ -162,19 +175,7 @@ module "internal_lb" {
     public_alb_subnet_ids          = data.aws_subnets.public_subnets.ids
     private_alb_subnet_ids         = data.aws_subnets.private_subnets.ids
     private_nlb_subnet_ids         = data.aws_subnets.private_subnets.ids
-
-    api_configs = flatten([
-      for environment in var.environments : [
-        for application in var.applications : {
-          host_header_name  = "${environment}-api-${application}.${var.domain_name}"
-          target_group_name = "${application}-ecs-tg-${environment}"
-          tags = {
-            Environment = environment
-            Application = application
-          }
-        }
-      ]
-    ])
+    api_configs                    = local.api_configs
   }
   tags = local.tags
 }
@@ -218,6 +219,7 @@ module "api_gateway" {
     vpc_link_name                   = "${var.project_name}-vpclink-${var.stage}"
     public_alb_http_tcp_listern_arn = module.internal_lb.public_alb.http_tcp_listener_arns[0]
     private_nlb_target_group_arn    = module.internal_lb.private_nlb.lb_arn
+    api_configs                     = local.api_configs
   }
   tags = local.tags
 }

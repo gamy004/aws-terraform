@@ -56,11 +56,15 @@ resource "aws_api_gateway_rest_api_policy" "api_policy" {
 }
 
 resource "aws_api_gateway_domain_name" "api_domain" {
+  count = length(var.configs.api_configs)
+
   regional_certificate_arn = var.certificate_arn
-  domain_name              = var.domain_name
+  domain_name              = var.configs.api_configs[count.index].host_header_name
   endpoint_configuration {
     types = ["REGIONAL"]
   }
+
+  tags = merge(var.tags, try(var.configs.api_configs[count.index].tags, {}))
 }
 
 resource "aws_api_gateway_deployment" "api_deployment" {
@@ -81,9 +85,10 @@ resource "aws_api_gateway_stage" "api_v1" {
 }
 
 resource "aws_api_gateway_base_path_mapping" "api_mapping" {
+  count       = length(var.configs.api_configs)
   api_id      = aws_api_gateway_rest_api.api.id
   stage_name  = aws_api_gateway_stage.api_v1.stage_name
-  domain_name = aws_api_gateway_domain_name.api_domain.domain_name
+  domain_name = var.configs.api_configs[count.index].host_header_name
 }
 
 resource "aws_api_gateway_method_settings" "api_settings" {
