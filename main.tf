@@ -215,12 +215,12 @@ module "api_gateway" {
   cloudwatch_role_arn = data.aws_iam_role.api_gateway_cloudwatch_role.arn
   certificate_arn     = data.aws_acm_certificate.workload_certificate.arn
   configs = {
-    name                            = "${var.project_name}-api-gw-${var.stage}"
-    vpc_link_name                   = "${var.project_name}-vpclink-${var.stage}"
-    public_alb_http_tcp_listern_arn = module.internal_lb.public_alb.http_tcp_listener_arns[0]
-    private_nlb_target_group_arn    = module.internal_lb.private_nlb.lb_arn
-    private_nlb_dns_name            = module.internal_lb.private_nlb.lb_dns_name
-    api_configs                     = local.api_configs
+    name          = "${var.project_name}-api-gw-${var.stage}"
+    vpc_link_name = "${var.project_name}-vpclink-${var.stage}"
+    # public_alb_http_tcp_listern_arn = module.internal_lb.public_alb.http_tcp_listener_arns[0]
+    private_nlb_target_group_arn = module.internal_lb.private_nlb.lb_arn
+    private_nlb_dns_name         = module.internal_lb.private_nlb.lb_dns_name
+    api_configs                  = local.api_configs
   }
   tags = local.tags
 }

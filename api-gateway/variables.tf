@@ -26,10 +26,10 @@ variable "certificate_arn" {
 variable "configs" {
   description = "Value of the configurations for the api gateway"
   type = object({
-    name                            = string
-    vpc_link_name                   = string
-    public_alb_http_tcp_listern_arn = string
-    private_nlb_dns_name            = string
+    name                         = string
+    vpc_link_name                = string
+    private_nlb_dns_name         = string
+    private_nlb_target_group_arn = string
     api_configs = list(object({
       host_header_name = string
       tags = object({
@@ -39,10 +39,10 @@ variable "configs" {
     }))
   })
   default = {
-    name                            = "<project>-api-gw-<stage>"
-    vpc_link_name                   = "<project>-vpclink-<stage>"
-    public_alb_http_tcp_listern_arn = ""
-    private_nlb_dns_name            = ""
+    name                         = "<project>-api-gw-<stage>"
+    vpc_link_name                = "<project>-vpclink-<stage>"
+    private_nlb_dns_name         = ""
+    private_nlb_target_group_arn = ""
     api_configs = [{
       host_header_name = "<environment>-api-<application>.<domain>"
       tags = {
