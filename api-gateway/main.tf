@@ -14,19 +14,57 @@ resource "aws_api_gateway_rest_api" "api" {
   body = jsonencode({
     openapi = "3.0.1"
     info = {
-      title   = "example"
-      version = "1.0"
+      title   = "${var.configs.name}"
+      version = "${timestamp()}"
     }
     paths = {
-      "/" = {
-        get = {
-          x-amazon-apigateway-integration = {
-            httpMethod           = "GET"
-            payloadFormatVersion = "1.0"
-            type                 = "HTTP_PROXY"
-            uri                  = "https://ip-ranges.amazonaws.com/ip-ranges.json"
+      "/{proxy+}" : {
+        "options" : {
+          "parameters" : [{
+            "name" : "proxy",
+            "in" : "path",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }],
+          "responses" : {
+            "200" : {
+              "description" : "200 response",
+              "headers" : {
+                "Access-Control-Allow-Origin" : {
+                  "schema" : {
+                    "type" : "string"
+                  }
+                },
+                "Access-Control-Allow-Methods" : {
+                  "schema" : {
+                    "type" : "string"
+                  }
+                },
+                "Access-Control-Allow-Headers" : {
+                  "schema" : {
+                    "type" : "string"
+                  }
+                }
+              },
+              "content" : {}
+            }
           }
+        },
+        "x-amazon-apigateway-any-method" : {
+          "parameters" : [{
+            "name" : "proxy",
+            "in" : "path",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }]
         }
+      },
+      "/" : {
+        "get" : {}
       }
     }
   })
