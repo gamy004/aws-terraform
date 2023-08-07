@@ -54,6 +54,16 @@ resource "aws_api_gateway_method" "proxy" {
   }
 }
 
+resource "aws_api_gateway_method" "proxy_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.proxy.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+  request_parameters = {
+    "method.request.path.proxy" = true
+  }
+}
+
 # resource "aws_api_gateway_integration" "base" {
 #   rest_api_id             = aws_api_gateway_rest_api.api.id
 #   resource_id             = aws_api_gateway_resource.base.id
@@ -78,6 +88,13 @@ resource "aws_api_gateway_integration" "proxy" {
   request_parameters = {
     "integration.request.path.proxy" = "method.request.path.proxy"
   }
+}
+
+resource "aws_api_gateway_integration" "proxy_options" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.proxy.id
+  http_method = aws_api_gateway_method.proxy_options.http_method
+  type        = "MOCK"
 }
 
 data "aws_iam_policy_document" "api_access_policy" {
