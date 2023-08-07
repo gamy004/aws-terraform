@@ -64,7 +64,7 @@ resource "aws_api_gateway_domain_name" "api_domain" {
 }
 
 resource "aws_api_gateway_deployment" "api_deployment" {
-  depends_on  = [aws_api_gateway_rest_api_policy.aws_api_gateway_rest_api_policy.api_policy]
+  depends_on  = [aws_api_gateway_rest_api_policy.api_policy]
   rest_api_id = aws_api_gateway_rest_api.api.id
   triggers = {
     redeployment = sha1(jsonencode(aws_api_gateway_rest_api.api.body))
