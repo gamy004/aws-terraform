@@ -4,13 +4,13 @@ data "aws_vpc_endpoint" "api_gateway_endpoint" {
 }
 
 resource "aws_api_gateway_rest_api" "api" {
-  name        = var.configs.name
-  description = "THe API Gateway for ${var.configs.name}"
+  name                         = var.configs.name
+  description                  = "THe API Gateway for ${var.configs.name}"
+  disable_execute_api_endpoint = true
   endpoint_configuration {
     types            = ["PRIVATE"]
     vpc_endpoint_ids = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
   }
-
   body = jsonencode({
     openapi = "3.0.1"
     info = {
@@ -30,22 +30,15 @@ resource "aws_api_gateway_rest_api" "api" {
       }
     }
   })
-
   tags = merge(var.tags, { Name = var.configs.name })
 }
 
 data "aws_iam_policy_document" "api_access_policy" {
   statement {
-    effect = "Allow"
-
-    principals {
-      type        = "AWS"
-      identifiers = ["*"]
-    }
-
-    actions   = ["execute-api:Invoke"]
-    resources = ["${aws_api_gateway_rest_api.api.execution_arn}"]
-
+    effect     = "Allow"
+    principals = "*"
+    actions    = ["execute-api:Invoke"]
+    resources  = ["${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"]
     condition {
       test     = "StringEquals"
       variable = "aws:sourceVpce"
@@ -62,19 +55,17 @@ resource "aws_api_gateway_rest_api_policy" "api_policy" {
 resource "aws_api_gateway_domain_name" "api_domain" {
   regional_certificate_arn = var.certificate_arn
   domain_name              = var.domain_name
-
   endpoint_configuration {
     types = ["REGIONAL"]
   }
 }
 
 resource "aws_api_gateway_deployment" "api_deployment" {
+  depends_on  = [aws_api_gateway_rest_api_policy.aws_api_gateway_rest_api_policy.api_policy]
   rest_api_id = aws_api_gateway_rest_api.api.id
-
   triggers = {
     redeployment = sha1(jsonencode(aws_api_gateway_rest_api.api.body))
   }
-
   lifecycle {
     create_before_destroy = true
   }
@@ -96,7 +87,6 @@ resource "aws_api_gateway_method_settings" "api_settings" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   stage_name  = aws_api_gateway_stage.api_v1.stage_name
   method_path = "*/*"
-
   settings {
     metrics_enabled        = true
     data_trace_enabled     = true
@@ -162,4 +152,5 @@ resource "aws_api_gateway_vpc_link" "vpc_link_to_nlb" {
   name        = var.configs.vpc_link_name
   description = var.configs.vpc_link_name
   target_arns = [var.configs.private_nlb_target_group_arn]
+  tags        = merge(var.tags, { Name = var.configs.vpc_link_name })
 }
