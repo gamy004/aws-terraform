@@ -3,26 +3,6 @@ data "aws_vpc_endpoint" "api_gateway_endpoint" {
   service_name = "com.amazonaws.${var.region}.execute-api"
 }
 
-data "aws_iam_policy_document" "api_access_policy" {
-  statement {
-    effect = "Allow"
-
-    principals {
-      type        = "AWS"
-      identifiers = ["*"]
-    }
-
-    actions   = ["execute-api:Invoke"]
-    resources = ["${aws_api_gateway_rest_api.api.execution_arn}"]
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:sourceVpce"
-      values   = ["${data.aws_vpc_endpoint.api_gateway_endpoint.id}"]
-    }
-  }
-}
-
 resource "aws_api_gateway_rest_api" "api" {
   name        = var.configs.name
   description = "THe API Gateway for ${var.configs.name}"
@@ -30,7 +10,7 @@ resource "aws_api_gateway_rest_api" "api" {
     types            = ["PRIVATE"]
     vpc_endpoint_ids = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
   }
-  put_rest_api_mode = "merge"
+
   body = jsonencode({
     openapi = "3.0.1"
     info = {
@@ -51,9 +31,32 @@ resource "aws_api_gateway_rest_api" "api" {
     }
   })
 
-  policy = data.aws_iam_policy_document.api_access_policy.json
-
   tags = merge(var.tags, { Name = var.configs.name })
+}
+
+data "aws_iam_policy_document" "api_access_policy" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    actions   = ["execute-api:Invoke"]
+    resources = ["${aws_api_gateway_rest_api.api.execution_arn}"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:sourceVpce"
+      values   = ["${data.aws_vpc_endpoint.api_gateway_endpoint.id}"]
+    }
+  }
+}
+
+resource "aws_api_gateway_rest_api_policy" "api_policy" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  policy      = data.aws_iam_policy_document.api_access_policy.json
 }
 
 resource "aws_api_gateway_domain_name" "api_domain" {
