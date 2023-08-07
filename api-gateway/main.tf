@@ -102,6 +102,20 @@ resource "aws_api_gateway_integration" "proxy_options" {
   }
 }
 
+resource "aws_api_gateway_method_response" "proxy_options_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.proxy.id
+  http_method = aws_api_gateway_method.proxy_options.http_method
+  status_code = "200"
+}
+
+resource "aws_api_gateway_integration_response" "proxy_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.proxy.id
+  http_method = aws_api_gateway_method.proxy_options.http_method
+  status_code = aws_api_gateway_method_response.proxy_options_method_response.status_code
+}
+
 data "aws_iam_policy_document" "api_access_policy" {
   statement {
     effect = "Allow"
