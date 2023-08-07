@@ -7,6 +7,7 @@ resource "aws_api_gateway_rest_api" "api" {
   name                         = var.configs.name
   description                  = "THe API Gateway for ${var.configs.name}"
   disable_execute_api_endpoint = true
+  put_rest_api_mode            = "merge"
   endpoint_configuration {
     types            = ["PRIVATE"]
     vpc_endpoint_ids = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
