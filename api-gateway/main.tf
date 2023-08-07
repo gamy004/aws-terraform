@@ -35,7 +35,7 @@ resource "aws_api_gateway_integration" "proxy" {
   resource_id             = aws_api_gateway_resource.proxy.id
   uri                     = var.configs.public_alb_http_tcp_listern_arn
   http_method             = aws_api_gateway_method.proxy.http_method
-  type                    = "HTTP_PROXY"
+  type                    = "AWS_PROXY"
   integration_http_method = "ANY"
   connection_type         = "VPC_LINK"
   connection_id           = aws_api_gateway_vpc_link.vpc_link_to_nlb.id
