@@ -27,6 +27,8 @@ resource "aws_api_gateway_rest_api" "api" {
             payloadFormatVersion = "1.0"
             type                 = "HTTP_PROXY"
             uri                  = "https://${var.configs.private_nlb_dns_name}/"
+            connectionType       = "VPC_LINK"
+            connectionId         = aws_api_gateway_vpc_link.vpc_link_to_nlb.id
           }
         }
       }
