@@ -13,13 +13,14 @@ module "db" {
 
   source = "terraform-aws-modules/rds-aurora/aws"
 
-  name              = "${each.key}-db"
-  engine_mode       = "provisioned"
-  engine            = each.value.engine
-  engine_version    = each.value.engine_version
-  port              = each.value.port
-  storage_encrypted = true
-  master_username   = "postgres"
+  name                         = "${each.key}-db"
+  engine_mode                  = "provisioned"
+  engine                       = each.value.engine
+  engine_version               = each.value.engine_version
+  port                         = each.value.port
+  performance_insights_enabled = true
+  storage_encrypted            = true
+  master_username              = "postgres"
 
   vpc_id = var.vpc_id
 
