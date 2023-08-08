@@ -26,13 +26,14 @@ variable "monitoring_role_arn" {
 variable "configs" {
   description = "Value of the configurations for the database"
   type = map(object({
-    engine             = string
-    engine_version     = string
-    port               = number
-    min_capacity       = number
-    max_capacity       = number
-    num_instances      = number
-    availability_zones = list(string)
+    engine              = string
+    engine_version      = string
+    port                = number
+    min_capacity        = number
+    max_capacity        = number
+    num_instances       = number
+    availability_zones  = list(string)
+    deletion_protection = bool
   }))
   default = {
     project-dev = {
@@ -43,6 +44,7 @@ variable "configs" {
       max_capacity       = 1
       num_instances      = 1
       availability_zones = ["ap-southeast-1a"]
+      deletion_protection = false
     }
   }
 }

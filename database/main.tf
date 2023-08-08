@@ -18,6 +18,7 @@ module "db" {
   engine                       = each.value.engine
   engine_version               = each.value.engine_version
   port                         = each.value.port
+  deletion_protection          = each.value.deletion_protection
   performance_insights_enabled = true
   storage_encrypted            = true
   master_username              = "postgres"
@@ -47,8 +48,6 @@ module "db" {
     for i in range(1, each.value.num_instances + 1) :
     "instance-${i}" => { identifier = "${each.key}-db-instance-${i}" }
   }
-
-  availability_zones = lookup(each.value, "availability_zones", null)
 
   tags = merge(var.tags, { Name = "${each.key}-db" })
 }

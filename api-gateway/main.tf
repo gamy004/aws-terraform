@@ -64,17 +64,6 @@ resource "aws_api_gateway_method" "proxy_options" {
   }
 }
 
-# resource "aws_api_gateway_integration" "base" {
-#   rest_api_id             = aws_api_gateway_rest_api.api.id
-#   resource_id             = aws_api_gateway_resource.base.id
-#   uri                     = "https://${var.configs.private_nlb_dns_name}/"
-#   http_method             = aws_api_gateway_method.base.http_method
-#   type                    = "HTTP_PROXY"
-#   integration_http_method = "GET"
-#   connection_type         = "VPC_LINK"
-#   connection_id           = aws_api_gateway_vpc_link.vpc_link_to_nlb.id
-# }
-
 resource "aws_api_gateway_integration" "proxy" {
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = aws_api_gateway_resource.proxy.id
@@ -110,10 +99,16 @@ resource "aws_api_gateway_method_response" "proxy_options_method_response" {
 }
 
 resource "aws_api_gateway_integration_response" "proxy_options_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.proxy.id
-  http_method = aws_api_gateway_method.proxy_options.http_method
-  status_code = aws_api_gateway_method_response.proxy_options_method_response.status_code
+  rest_api_id      = aws_api_gateway_rest_api.api.id
+  resource_id      = aws_api_gateway_resource.proxy.id
+  http_method      = aws_api_gateway_method.proxy_options.http_method
+  status_code      = aws_api_gateway_method_response.proxy_options_method_response.status_code
+  content_handling = "CONVERT_TO_TEXT"
+  # response_parameters = {
+  #   "Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,sentry-trace,baggage'"
+  #   "Access-Control-Allow-Methods" = "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+  #   "Access-Control-Allow-Origin"  = "'*'"
+  # }
 }
 
 data "aws_iam_policy_document" "api_access_policy" {
