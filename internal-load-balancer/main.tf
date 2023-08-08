@@ -47,6 +47,7 @@ locals {
       }
       health_check = {
         enabled             = true
+        protocol            = "HTTPS"
         interval            = 30
         path                = "/"
         port                = "traffic-port"
