@@ -244,6 +244,7 @@ module "database" {
     aws = aws.workload_database_role
   }
 
+  region              = var.aws_region
   vpc_id              = data.aws_vpc.workload_vpc.id
   subnet_group_name   = var.db_configs.subnet_group_name
   security_group_ids  = [module.security_groups.secure_sg.id]

@@ -1,3 +1,8 @@
+variable "region" {
+  description = "Value of the region for the api gateway"
+  type        = string
+}
+
 variable "vpc_id" {
   description = "Value of the vpc id for the database"
   type        = string
@@ -21,21 +26,23 @@ variable "monitoring_role_arn" {
 variable "configs" {
   description = "Value of the configurations for the database"
   type = map(object({
-    engine         = string
-    engine_version = string
-    port           = number
-    min_capacity   = number
-    max_capacity   = number
-    num_instances  = number
+    engine             = string
+    engine_version     = string
+    port               = number
+    min_capacity       = number
+    max_capacity       = number
+    num_instances      = number
+    availability_zones = list(string)
   }))
   default = {
     project-dev = {
-      port           = 5432
-      engine         = "aurora-postgresql"
-      engine_version = "15.3"
-      min_capacity   = 0.5
-      max_capacity   = 1
-      num_instances  = 1
+      port               = 5432
+      engine             = "aurora-postgresql"
+      engine_version     = "15.3"
+      min_capacity       = 0.5
+      max_capacity       = 1
+      num_instances      = 1
+      availability_zones = ["ap-southeast-1a"]
     }
   }
 }
