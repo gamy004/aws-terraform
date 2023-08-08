@@ -104,11 +104,11 @@ resource "aws_api_gateway_integration_response" "proxy_options_integration_respo
   http_method      = aws_api_gateway_method.proxy_options.http_method
   status_code      = aws_api_gateway_method_response.proxy_options_method_response.status_code
   content_handling = "CONVERT_TO_TEXT"
-  response_parameters = {
-    "Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,sentry-trace,baggage'"
-    "Access-Control-Allow-Methods" = "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
-    "Access-Control-Allow-Origin"  = "'*'"
-  }
+  # response_parameters = {
+  #   "Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,sentry-trace,baggage'"
+  #   "Access-Control-Allow-Methods" = "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+  #   "Access-Control-Allow-Origin"  = "'*'"
+  # }
 }
 
 data "aws_iam_policy_document" "api_access_policy" {
