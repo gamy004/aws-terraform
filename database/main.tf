@@ -18,6 +18,7 @@ module "db" {
   engine                       = each.value.engine
   engine_version               = each.value.engine_version
   port                         = each.value.port
+  deletion_protection          = each.value.deletion_protection
   performance_insights_enabled = true
   storage_encrypted            = true
   master_username              = "postgres"
