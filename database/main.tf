@@ -1,44 +1,51 @@
-data "aws_rds_engine_version" "postgresql" {
-  engine  = "aurora-postgresql"
-  version = "15.3"
+# data "aws_rds_engine_version" "postgresql" {
+#   engine  = "aurora-postgresql"
+#   version = "15.3"
+# }
+locals {
+  aurora_dbs = {
+    for k, v in var.configs : k => v if length(regexall("aurora-*", v.engine)) > 0
+  }
 }
 
 module "db" {
+  for_each = local.aurora_dbs
+
   source = "terraform-aws-modules/rds-aurora/aws"
 
-  name              = var.configs.name
-  engine            = data.aws_rds_engine_version.postgresql.engine
+  name              = "${each.key}-db"
   engine_mode       = "provisioned"
-  engine_version    = data.aws_rds_engine_version.postgresql.version
-  port              = var.configs.port
+  engine            = each.value.engine
+  engine_version    = each.value.engine_version
+  port              = each.value.port
   storage_encrypted = true
   master_username   = "postgres"
 
-  vpc_id               = var.vpc_id
+  vpc_id = var.vpc_id
 
-  create_security_group = false
-  vpc_security_group_ids = var.configs.security_group_ids
+  create_security_group  = false
+  vpc_security_group_ids = var.security_group_ids
 
-  db_subnet_group_name = var.configs.subnet_group_name
+  db_subnet_group_name = var.subnet_group_name
 
   create_monitoring_role = false
-  monitoring_interval = 60
-  monitoring_role_arn = var.configs.monitoring_role_arn
-  
+  monitoring_interval    = 60
+  monitoring_role_arn    = var.monitoring_role_arn
+
   apply_immediately   = true
   skip_final_snapshot = true
 
   serverlessv2_scaling_configuration = {
-    min_capacity = var.configs.min_capacity
-    max_capacity = var.configs.max_capacity
+    min_capacity = each.value.min_capacity
+    max_capacity = each.value.max_capacity
   }
 
   instance_class = "db.serverless"
 
   instances = {
-    for v in range(1, var.configs.num_instances + 1): 
-      "instance-${v}" => { identifier = "${var.configs.name}-instance-${v}" }
+    for i in range(1, each.value.num_instances + 1) :
+    "instance-${i}" => { identifier = "${each.key}-db-instance-${i}" }
   }
 
-  tags   = merge(var.tags, { Name = var.configs.name })
+  tags = merge(var.tags, { Name = "${each.key}-db" })
 }

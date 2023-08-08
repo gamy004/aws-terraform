@@ -91,6 +91,12 @@ data "aws_iam_role" "api_gateway_cloudwatch_role" {
   name = "kmutt-api-gateway-logs-role-${var.stage}"
 }
 
+data "aws_iam_role" "database_monitoring_role" {
+  provider = aws.workload_infra_role
+
+  name = "rds-monitoring-role"
+}
+
 module "security_groups" {
   source = "./seceruity-group"
 
@@ -152,6 +158,11 @@ data "aws_subnets" "public_subnets" {
     name   = "tag:Name"
     values = ["${data.aws_iam_account_alias.workload_account_alias.account_alias}-app*"]
   }
+}
+
+data "aws_db_subnet_group" "database" {
+  provider = aws.workload_database_role
+  name     = var.db_configs.subnet_group_name
 }
 
 # Internal Load Balancer
@@ -225,23 +236,18 @@ module "api_gateway" {
   tags = local.tags
 }
 
-## Database
-# module "database" {
-#   depends_on = [module.security_groups]
-#   source     = "./database"
+# ## Database
+module "database" {
+  source = "./database"
 
-#   providers = {
-#     aws = aws.workload_database_role
-#   }
+  providers = {
+    aws = aws.workload_database_role
+  }
 
-#   vpc_id = data.aws_vpc.workload_vpc.id
-#   configs = merge(
-#     var.db_configs,
-#     {
-#       name                = "${var.project_name}-${var.db_configs.name}-${var.stage}"
-#       monitoring_role_arn = "arn:aws:iam::${var.workload_account_id}:role/rds-monitoring-role"
-#       security_group_ids  = [module.security_groups.secure_sg.id]
-#     }
-#   )
-#   tags = local.tags
-# }
+  vpc_id              = data.aws_vpc.workload_vpc.id
+  subnet_group_name   = var.db_configs.subnet_group_name
+  security_group_ids  = [module.security_groups.secure_sg.id]
+  monitoring_role_arn = data.aws_iam_role.database_monitoring_role.arn
+  configs             = var.db_configs.instances
+  tags                = local.tags
+}
