@@ -49,7 +49,5 @@ module "db" {
     "instance-${i}" => { identifier = "${each.key}-db-instance-${i}" }
   }
 
-  availability_zones = lookup(each.value, "availability_zones", null)
-
   tags = merge(var.tags, { Name = "${each.key}-db" })
 }
