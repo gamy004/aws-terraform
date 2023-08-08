@@ -165,76 +165,76 @@ data "aws_db_subnet_group" "database" {
   name     = var.db_configs.subnet_group_name
 }
 
-# Internal Load Balancer
-module "internal_lb" {
-  source = "./internal-load-balancer"
-
-  providers = {
-    aws = aws.workload_infra_role
-  }
-
-  vpc_id          = data.aws_vpc.workload_vpc.id
-  certificate_arn = data.aws_acm_certificate.workload_certificate.arn
-  configs = {
-    public_alb_name                = "${var.project_name}-alb-${var.stage}"
-    private_alb_name               = "${var.project_name}-internal-alb-${var.stage}"
-    private_nlb_name               = "${var.project_name}-internal-nlb-${var.stage}"
-    public_alb_target_group_name   = "${var.project_name}-api-gw-tg-${var.stage}"
-    private_nlb_target_group_name  = "${var.project_name}-internal-nlb-tg-${var.stage}"
-    public_alb_security_group_ids  = [module.security_groups.public_alb_sg.id]
-    private_alb_security_group_ids = [module.security_groups.private_alb_sg.id]
-    public_alb_subnet_ids          = data.aws_subnets.public_subnets.ids
-    private_alb_subnet_ids         = data.aws_subnets.private_subnets.ids
-    private_nlb_subnet_ids         = data.aws_subnets.private_subnets.ids
-    api_configs                    = local.api_configs
-  }
-  tags = local.tags
-}
-
-## External Load Balancer
-# module "external_lb" {
-#   source = "./external-load-balancer"
+# # Internal Load Balancer
+# module "internal_lb" {
+#   source = "./internal-load-balancer"
 
 #   providers = {
-#     aws = aws.network_infra_role
+#     aws = aws.workload_infra_role
 #   }
 
-#   region          = var.aws_region
-#   vpc_id          = data.aws_vpc.network_vpc.id
-#   certificate_arn = data.aws_acm_certificate.network_certificate.arn
+#   vpc_id          = data.aws_vpc.workload_vpc.id
+#   certificate_arn = data.aws_acm_certificate.workload_certificate.arn
 #   configs = {
-#     name                         = "${var.project_name}-external-alb-${var.stage}"
-#     target_group_name            = "${var.project_name}-external-alb-tg-${var.stage}"
-#     security_group_ids           = [module.security_groups.external_alb_sg.id]
-#     subnet_ids                   = data.aws_subnets.external_subnets.ids
-#     internal_public_alb_dns_name = module.internal_lb.public_alb.lb_dns_name
+#     public_alb_name                = "${var.project_name}-alb-${var.stage}"
+#     private_alb_name               = "${var.project_name}-internal-alb-${var.stage}"
+#     private_nlb_name               = "${var.project_name}-internal-nlb-${var.stage}"
+#     public_alb_target_group_name   = "${var.project_name}-api-gw-tg-${var.stage}"
+#     private_nlb_target_group_name  = "${var.project_name}-internal-nlb-tg-${var.stage}"
+#     public_alb_security_group_ids  = [module.security_groups.public_alb_sg.id]
+#     private_alb_security_group_ids = [module.security_groups.private_alb_sg.id]
+#     public_alb_subnet_ids          = data.aws_subnets.public_subnets.ids
+#     private_alb_subnet_ids         = data.aws_subnets.private_subnets.ids
+#     private_nlb_subnet_ids         = data.aws_subnets.private_subnets.ids
+#     api_configs                    = local.api_configs
 #   }
 #   tags = local.tags
 # }
 
-## API Gateway
-module "api_gateway" {
-  source = "./api-gateway"
+# ## External Load Balancer
+# # module "external_lb" {
+# #   source = "./external-load-balancer"
 
-  providers = {
-    aws = aws.workload_infra_role
-  }
+# #   providers = {
+# #     aws = aws.network_infra_role
+# #   }
 
-  region              = var.aws_region
-  vpc_id              = data.aws_vpc.workload_vpc.id
-  domain_name         = var.domain_name
-  cloudwatch_role_arn = data.aws_iam_role.api_gateway_cloudwatch_role.arn
-  certificate_arn     = data.aws_acm_certificate.workload_certificate.arn
-  configs = {
-    name          = "${var.project_name}-api-gw-${var.stage}"
-    vpc_link_name = "${var.project_name}-vpclink-${var.stage}"
-    # public_alb_http_tcp_listern_arn = module.internal_lb.public_alb.http_tcp_listener_arns[0]
-    private_nlb_target_group_arn = module.internal_lb.private_nlb.lb_arn
-    private_nlb_dns_name         = module.internal_lb.private_nlb.lb_dns_name
-    api_configs                  = local.api_configs
-  }
-  tags = local.tags
-}
+# #   region          = var.aws_region
+# #   vpc_id          = data.aws_vpc.network_vpc.id
+# #   certificate_arn = data.aws_acm_certificate.network_certificate.arn
+# #   configs = {
+# #     name                         = "${var.project_name}-external-alb-${var.stage}"
+# #     target_group_name            = "${var.project_name}-external-alb-tg-${var.stage}"
+# #     security_group_ids           = [module.security_groups.external_alb_sg.id]
+# #     subnet_ids                   = data.aws_subnets.external_subnets.ids
+# #     internal_public_alb_dns_name = module.internal_lb.public_alb.lb_dns_name
+# #   }
+# #   tags = local.tags
+# # }
+
+# ## API Gateway
+# module "api_gateway" {
+#   source = "./api-gateway"
+
+#   providers = {
+#     aws = aws.workload_infra_role
+#   }
+
+#   region              = var.aws_region
+#   vpc_id              = data.aws_vpc.workload_vpc.id
+#   domain_name         = var.domain_name
+#   cloudwatch_role_arn = data.aws_iam_role.api_gateway_cloudwatch_role.arn
+#   certificate_arn     = data.aws_acm_certificate.workload_certificate.arn
+#   configs = {
+#     name          = "${var.project_name}-api-gw-${var.stage}"
+#     vpc_link_name = "${var.project_name}-vpclink-${var.stage}"
+#     # public_alb_http_tcp_listern_arn = module.internal_lb.public_alb.http_tcp_listener_arns[0]
+#     private_nlb_target_group_arn = module.internal_lb.private_nlb.lb_arn
+#     private_nlb_dns_name         = module.internal_lb.private_nlb.lb_dns_name
+#     api_configs                  = local.api_configs
+#   }
+#   tags = local.tags
+# }
 
 # ## Database
 module "database" {
