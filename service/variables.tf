@@ -15,23 +15,7 @@ variable "configs" {
     subnet_ids         = list(string)
     security_group_ids = list(string)
     target_group_arns  = list(string)
-    service_configs = list(object({
-      service_name              = string
-      desired_count             = number
-      enable_autoscaling        = bool
-      autoscaling_min_capacity  = number
-      autoscaling_max_capacity  = number
-      service_cpu               = number
-      service_memory            = number
-      task_cpu                  = number
-      task_memory               = number
-      image                     = string
-      enable_cloudwatch_logging = bool
-      tags = object({
-        Environment = string
-        Application = string
-      })
-    }))
+    service_configs    = list(any)
   })
   default = {
     cluster_name       = "<project>-cluster-<stage>"
@@ -39,17 +23,17 @@ variable "configs" {
     security_group_ids = []
     target_group_arns  = []
     service_configs = [{
-      service_name             = "<application>-service-<environment>"
-      desired_count            = 1
-      enable_autoscaling       = true
-      autoscaling_min_capacity = 1
-      autoscaling_max_capacity = 3
-      service_cpu              = 1024
-      service_memory           = 2048
-      task_cpu                 = 512
-      task_memory              = 1024
-      image                    = "<image_url>"
-      enable_cloudwatch_logging = true
+      service_name              = "<application>-service-<environment>"
+      desired_count             = 1             #optional
+      enable_autoscaling        = true          #optional
+      autoscaling_min_capacity  = 1             #optional
+      autoscaling_max_capacity  = 3             #optional
+      service_cpu               = 1024          #optional
+      service_memory            = 2048          #optional
+      task_cpu                  = 512           #optional
+      task_memory               = 1024          #optional
+      image                     = "<image_url>" #optional
+      enable_cloudwatch_logging = true          #optional
       tags = {
         Environment = "<environment>"
         Application = "<application>"
