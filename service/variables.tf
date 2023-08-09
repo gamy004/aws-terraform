@@ -16,7 +16,11 @@ variable "configs" {
     security_group_ids = list(string)
     target_group_arns  = list(string)
     service_configs = list(object({
-      service_name = string
+      service_name             = string
+      desired_count            = number
+      enable_autoscaling       = bool
+      autoscaling_min_capacity = number
+      autoscaling_max_capacity = number
       tags = object({
         Environment = string
         Application = string
@@ -29,7 +33,11 @@ variable "configs" {
     security_group_ids = []
     target_group_arns  = []
     service_configs = [{
-      service_name = "<application>-service-<environment>"
+      service_name             = "<application>-service-<environment>"
+      desired_count            = 1
+      enable_autoscaling       = true
+      autoscaling_min_capacity = 1
+      autoscaling_max_capacity = 3
       tags = {
         Environment = "<environment>"
         Application = "<application>"

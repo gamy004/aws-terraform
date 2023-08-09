@@ -5,6 +5,7 @@ locals {
 
   service_definitions = {
     for index, config in lookup(var.configs, "service_configs", []) : config.service_name => {
+      config                   = config
       cpu                      = lookup(config, "service_cpu", 1024)
       memory                   = lookup(config, "service_memory", 2048)
       subnet_ids               = var.configs.subnet_ids
