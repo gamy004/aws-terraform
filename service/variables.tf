@@ -15,7 +15,7 @@ variable "configs" {
     subnet_ids         = list(string)
     security_group_ids = list(string)
     target_group_arns  = list(string)
-    service_configs    = list(any)
+    service_configs    = any
   })
   default = {
     cluster_name       = "<project>-cluster-<stage>"
