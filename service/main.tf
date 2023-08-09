@@ -5,15 +5,15 @@ locals {
 
   service_definitions = {
     for index, config in lookup(var.configs, "service_configs", []) : config.service_name => {
-      desired_count            = lookup(config, "desired_count", 1)
-      cpu                      = lookup(config, "service_cpu", 1024)
-      memory                   = lookup(config, "service_memory", 2048)
+      desired_count            = try(config.desired_count, 1)
+      cpu                      = try(config.service_cpu, 1024)
+      memory                   = try(config.service_memory, 2048)
       subnet_ids               = var.configs.subnet_ids
       create_security_group    = false
       security_group_ids       = var.configs.security_group_ids
-      enable_autoscaling       = lookup(config, "enable_autoscaling", false)
-      autoscaling_min_capacity = lookup(config, "autoscaling_min_capacity", 1)
-      autoscaling_max_capacity = lookup(config, "autoscaling_max_capacity", 5)
+      enable_autoscaling       = try(config.enable_autoscaling, false)
+      autoscaling_min_capacity = try(config.autoscaling_min_capacity, 1)
+      autoscaling_max_capacity = try(config.autoscaling_max_capacity, 5)
       load_balancer = {
         service = {
           target_group_arn = element(var.configs.target_group_arns, index)
@@ -23,10 +23,10 @@ locals {
       }
       container_definitions = {
         (config.service_name) = {
-          cpu       = lookup(config, "task_cpu", 512)
-          memory    = lookup(config, "task_memory", 1024)
+          cpu       = try(config.task_cpu, 512)
+          memory    = try(config.task_memory, 1024)
           essential = true
-          image     = lookup(config, "image", "public.ecr.aws/lts/apache2:2.4-20.04_beta")
+          image     = try(config.image, "public.ecr.aws/lts/apache2:2.4-20.04_beta")
           port_mappings = [
             {
               name          = "${config.service_name}-80-tcp"
@@ -34,7 +34,7 @@ locals {
               protocol      = "tcp"
             }
           ]
-          enable_cloudwatch_logging = lookup(config, "enable_cloudwatch_logging", true)
+          enable_cloudwatch_logging = try(config.enable_cloudwatch_logging, true)
           memory_reservation        = 100
         }
       }
