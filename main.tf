@@ -17,6 +17,18 @@ locals {
       }
     ]
   ])
+
+  service_configs = flatten([
+    for environment in var.environments : [
+      for application in var.applications : {
+        service_name = "${application}-service-${environment}"
+        tags = {
+          Environment = environment
+          Application = application
+        }
+      }
+    ]
+  ])
 }
 
 provider "aws" {
@@ -236,7 +248,7 @@ module "api_gateway" {
   tags = local.tags
 }
 
-# ## Database
+## Database
 module "database" {
   source = "./database"
 
@@ -251,4 +263,20 @@ module "database" {
   monitoring_role_arn = data.aws_iam_role.database_monitoring_role.arn
   configs             = var.db_configs.instances
   tags                = local.tags
+}
+
+module "service" {
+  source = "./service"
+
+  providers = {
+    aws = aws.workload_infra_role
+  }
+
+  region = var.aws_region
+  vpc_id = data.aws_vpc.workload_vpc.id
+  configs = {
+    cluster_name    = "${var.project_name}-cluster-${var.stage}"
+    service_configs = local.service_configs
+  }
+  tags = local.tags
 }
