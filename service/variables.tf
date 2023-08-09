@@ -21,6 +21,10 @@ variable "configs" {
       enable_autoscaling       = bool
       autoscaling_min_capacity = number
       autoscaling_max_capacity = number
+      service_cpu              = number
+      service_memory           = number
+      task_cpu                 = number
+      task_memory              = number
       tags = object({
         Environment = string
         Application = string
@@ -38,6 +42,10 @@ variable "configs" {
       enable_autoscaling       = true
       autoscaling_min_capacity = 1
       autoscaling_max_capacity = 3
+      service_cpu              = 1024
+      service_memory           = 2048
+      task_cpu                 = 512
+      task_memory              = 1024
       tags = {
         Environment = "<environment>"
         Application = "<application>"
