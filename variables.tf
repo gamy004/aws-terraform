@@ -62,11 +62,16 @@ variable "db_configs" {
 }
 
 variable "sg_configs" {
-  type    = object({})
+  type    = any
   default = {}
 }
 
 variable "lb_configs" {
-  type    = object({})
+  type    = any
+  default = {}
+}
+
+variable "ecs_configs" {
+  type    = any
   default = {}
 }

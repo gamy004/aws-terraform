@@ -5,11 +5,14 @@ locals {
 
   service_definitions = {
     for index, config in lookup(var.configs, "service_configs", []) : config.service_name => {
-      cpu                   = lookup(config, "service_cpu", 1024)
-      memory                = lookup(config, "service_memory", 2048)
-      subnet_ids            = var.configs.subnet_ids
-      create_security_group = false
-      security_group_ids    = var.configs.security_group_ids
+      cpu                      = lookup(config, "service_cpu", 1024)
+      memory                   = lookup(config, "service_memory", 2048)
+      subnet_ids               = var.configs.subnet_ids
+      create_security_group    = false
+      security_group_ids       = var.configs.security_group_ids
+      enable_autoscaling       = lookup(config, "enable_autoscaling", false)
+      autoscaling_min_capacity = lookup(config, "autoscaling_min_capacity", 1)
+      autoscaling_max_capacity = lookup(config, "autoscaling_max_capacity", 5)
       load_balancer = {
         service = {
           target_group_arn = element(var.configs.target_group_arns, index)
@@ -22,7 +25,7 @@ locals {
           cpu       = lookup(config, "task_cpu", 512)
           memory    = lookup(config, "task_memory", 1024)
           essential = true
-          image     = "public.ecr.aws/lts/apache2:2.4-20.04_beta"
+          image     = lookup(config, "image", "public.ecr.aws/lts/apache2:2.4-20.04_beta")
           port_mappings = [
             {
               name          = "${config.service_name}-80-tcp"
@@ -88,19 +91,19 @@ module "ecs" {
       }
     }
   }
-  fargate_capacity_providers = {
-    FARGATE = {
-      default_capacity_provider_strategy = {
-        weight = 50
-        base   = 20
-      }
-    }
-    FARGATE_SPOT = {
-      default_capacity_provider_strategy = {
-        weight = 50
-      }
-    }
-  }
+  # fargate_capacity_providers = {
+  #   FARGATE = {
+  #     default_capacity_provider_strategy = {
+  #       weight = 50
+  #       base   = 20
+  #     }
+  #   }
+  #   FARGATE_SPOT = {
+  #     default_capacity_provider_strategy = {
+  #       weight = 50
+  #     }
+  #   }
+  # }
 
   services = local.service_definitions
 

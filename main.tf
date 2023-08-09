@@ -20,13 +20,16 @@ locals {
 
   service_configs = flatten([
     for environment in var.environments : [
-      for application in var.applications : {
-        service_name = "${application}-service-${environment}"
-        tags = {
-          Environment = environment
-          Application = application
+      for application in var.applications : merge(
+        lookup(var.ecs_configs, "${application}-${environment}", {}),
+        {
+          service_name = "${application}-${environment}"
+          tags = {
+            Environment = environment
+            Application = application
+          }
         }
-      }
+      )
     ]
   ])
 }
