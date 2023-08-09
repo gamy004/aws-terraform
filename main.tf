@@ -23,7 +23,7 @@ locals {
       for application in var.applications : merge(
         lookup(var.ecs_configs, "${application}-${environment}", {}),
         {
-          service_name = "${application}-${environment}"
+          service_name = "${application}-service-${environment}"
           tags = {
             Environment = environment
             Application = application
