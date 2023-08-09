@@ -10,3 +10,7 @@
 # output "db_configs" {
 #   value = local.db_configs
 # }
+
+output "service_definitions" {
+  value = module.service.service_definitions
+}

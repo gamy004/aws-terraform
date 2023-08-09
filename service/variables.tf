@@ -11,7 +11,10 @@ variable "vpc_id" {
 variable "configs" {
   description = "Value of the configurations for the service"
   type = object({
-    cluster_name = string
+    cluster_name       = string
+    subnet_ids         = list(string)
+    security_group_ids = list(string)
+    target_group_arns  = list(string)
     service_configs = list(object({
       service_name = string
       tags = object({
@@ -21,7 +24,10 @@ variable "configs" {
     }))
   })
   default = {
-    cluster_name = "<project>-cluster-<stage>"
+    cluster_name       = "<project>-cluster-<stage>"
+    subnet_ids         = []
+    security_group_ids = []
+    target_group_arns  = []
     service_configs = [{
       service_name = "<application>-service-<environment>"
       tags = {
