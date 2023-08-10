@@ -1,11 +1,4 @@
 locals {
-  # repo_configs = {
-  #   for repo_name, config in lookup(var.configs, "repo_configs", {}) : repo_name => {
-  #     repo_provider = "${config.provider}"
-  #     repo_id       = "${config.id}"
-  #   }
-  # }
-
   ci_configs = {
     for config in lookup(var.configs, "service_configs", []) : config.service_name => {
       name = "${config.ci_build_name}"
@@ -13,22 +6,19 @@ locals {
         {
           for variable_name, variable_config in lookup(config.environment_variables, "build", {}) : variable_name => variable_config
         },
-        # {
-        #   name  = "CF_ROLE_ARN"
-        #   type  = "PLAINTEXT"
-        #   value = "${var.configs.cloudfront_invalidation_role_arn}"
-        # },
-        # {
-        #   name  = "DISTRIBUTION_ID"
-        #   type  = "PLAINTEXT"
-        #   value = "${var.configs.cloudfront_dist_id}"
-        # },
-        # {
-        #   name  = "S3_BUCKET"
-        #   type  = "PLAINTEXT"
-        #   value = "${config.s3_bucket_name}"
-        # },
         {
+          #           CF_ROLE_ARN = {
+          #             type  = "PLAINTEXT"
+          # value = "${var.configs.cloudfront_invalidation_role_arn}"
+          #           }
+          #           DISTRIBUTION_ID = {
+          #             type  = "PLAINTEXT"
+          # value = "${var.configs.cloudfront_dist_id}"
+          #           }
+          S3_BUCKET = {
+            type  = "PLAINTEXT"
+            value = "${aws_s3_bucket.pipeline[config.service_name].id}"
+          }
           PROJECT = {
             type  = "PLAINTEXT"
             value = config.service_name
@@ -83,13 +73,19 @@ data "aws_kms_alias" "s3" {
   name = "alias/aws/s3"
 }
 
-# resource "aws_s3_bucket" "pipeline" {
-#   for_each = local.pipeline_configs
+resource "aws_s3_bucket" "artifact" {
+  bucket = var.configs.s3_artifact_bucket_name
 
-#   bucket = "${each.key}-${current_account_id}"
+  tags = merge(var.tags, { Name : "${var.configs.s3_artifact_bucket_name}" })
+}
 
-#   tags = merge(var.tags, { Name : "${each.key}-${current_account_id}" })
-# }
+resource "aws_s3_bucket" "pipeline" {
+  for_each = local.pipeline_configs
+
+  bucket = "${each.key}-${local.current_account_id}"
+
+  tags = merge(var.tags, { Name : "${each.key}-${local.current_account_id}" })
+}
 
 resource "aws_iam_policy" "ci" {
   for_each    = local.ci_configs
@@ -690,22 +686,6 @@ resource "aws_codebuild_project" "review" {
         value = environment_variable.value.value
       }
     }
-
-    # environment_variable {
-    #   name  = "AWS_DEFAULT_REGION"
-    #   type  = "PLAINTEXT"
-    #   value = "ap-southeast-1"
-    # }
-    # environment_variable {
-    #   name  = "REVIEW_HOST"
-    #   type  = "PLAINTEXT"
-    #   value = "http://172.28.68.10"
-    # }
-    # environment_variable {
-    #   name  = "ENV"
-    #   type  = "PLAINTEXT"
-    #   value = "dev"
-    # }
   }
 
   source {
@@ -737,7 +717,7 @@ resource "aws_codepipeline" "pipeline" {
   tags     = merge(var.tags, { Name : "${each.value.name}" })
 
   artifact_store {
-    location = var.configs.s3_artifact_bucket_name
+    location = aws_s3_bucket.artifact.id
     type     = "S3"
   }
 
@@ -768,24 +748,6 @@ resource "aws_codepipeline" "pipeline" {
     action {
       category = "Build"
       configuration = {
-        # "EnvironmentVariables" = jsonencode(
-        #   [
-        #     # for env_name, env_config in ci_configs[each.key]: {
-        #     #   name = env_name
-        #     #   type = env_config.type
-        #     # },
-        #     {
-        #       name  = "REPO_NAME"
-        #       type  = "PLAINTEXT"
-        #       value = "${each.value.repo_name}"
-        #     },
-        #     {
-        #       name  = "ENV"
-        #       type  = "PLAINTEXT"
-        #       value = var.tags.Stage
-        #     },
-        #   ]
-        # )
         "ProjectName" = aws_codebuild_project.ci[each.key].name
       }
       input_artifacts = [
@@ -825,20 +787,6 @@ resource "aws_codepipeline" "pipeline" {
     action {
       category = "Build"
       configuration = {
-        # "EnvironmentVariables" = jsonencode(
-        #   [
-        #     {
-        #       name  = "LOGIN"
-        #       type  = "PLAINTEXT"
-        #       value = "2d9b6d16c5bcf184feadc9ff5fe5067def6a0040"
-        #     },
-        #     {
-        #       name  = "PROJECT"
-        #       type  = "PLAINTEXT"
-        #       value = "${each.key}"
-        #     },
-        #   ]
-        # )
         "ProjectName" = aws_codebuild_project.review[each.key].name
       }
       input_artifacts = [
