@@ -23,7 +23,8 @@ locals {
       for application in var.applications : merge(
         lookup(var.ecs_configs, "${application}-${environment}", {}),
         {
-          service_name = "${application}-service-${environment}"
+          service_name        = "${application}-service-${environment}"
+          pipeline_build_name = "${var.project_name}-${application}-ci-codebuild-${environment}"
           tags = {
             Environment = environment
             Application = application
@@ -112,28 +113,10 @@ data "aws_iam_role" "database_monitoring_role" {
   name = "rds-monitoring-role"
 }
 
-module "security_groups" {
-  source = "./seceruity-group"
+data "aws_iam_policy" "parameter_store_access_policy" {
+  provider = aws.workload_infra_role
 
-  providers = {
-    aws.workload = aws.workload_security_role
-    aws.network  = aws.network_infra_role
-  }
-
-  workload_vpc_id = data.aws_vpc.workload_vpc.id
-  network_vpc_id  = data.aws_vpc.network_vpc.id
-  configs = merge(
-    var.sg_configs,
-    {
-      secure_security_group_name       = "${var.project_name}-secure-sg-${var.stage}"
-      app_security_group_name          = "${var.project_name}-app-sg-${var.stage}"
-      external_alb_security_group_name = "${var.project_name}-external-alb-sg-${var.stage}"
-      public_alb_security_group_name   = "${var.project_name}-alb-sg-${var.stage}"
-      private_alb_security_group_name  = "${var.project_name}-nonexpose-alb-sg-${var.stage}"
-      db_ports                         = [3306, 5432]
-    }
-  )
-  tags = local.tags
+  name = "kmutt-access-parameters-policy"
 }
 
 data "aws_subnets" "external_subnets" {
@@ -178,6 +161,30 @@ data "aws_subnets" "public_subnets" {
 data "aws_db_subnet_group" "database" {
   provider = aws.workload_database_role
   name     = var.db_configs.subnet_group_name
+}
+
+module "security_groups" {
+  source = "./seceruity-group"
+
+  providers = {
+    aws.workload = aws.workload_security_role
+    aws.network  = aws.network_infra_role
+  }
+
+  workload_vpc_id = data.aws_vpc.workload_vpc.id
+  network_vpc_id  = data.aws_vpc.network_vpc.id
+  configs = merge(
+    var.sg_configs,
+    {
+      secure_security_group_name       = "${var.project_name}-secure-sg-${var.stage}"
+      app_security_group_name          = "${var.project_name}-app-sg-${var.stage}"
+      external_alb_security_group_name = "${var.project_name}-external-alb-sg-${var.stage}"
+      public_alb_security_group_name   = "${var.project_name}-alb-sg-${var.stage}"
+      private_alb_security_group_name  = "${var.project_name}-nonexpose-alb-sg-${var.stage}"
+      db_ports                         = [3306, 5432]
+    }
+  )
+  tags = local.tags
 }
 
 # Internal Load Balancer
@@ -269,6 +276,25 @@ module "database" {
 
 module "service" {
   source = "./service"
+
+  providers = {
+    aws = aws.workload_infra_role
+  }
+
+  region = var.aws_region
+  vpc_id = data.aws_vpc.workload_vpc.id
+  configs = {
+    cluster_name       = "${var.project_name}-cluster-${var.stage}"
+    subnet_ids         = data.aws_subnets.private_subnets.ids
+    security_group_ids = [module.security_groups.app_sg.id]
+    target_group_arns  = module.internal_lb.private_alb.target_group_arns
+    service_configs    = local.service_configs
+  }
+  tags = local.tags
+}
+
+module "pipeline" {
+  source = "./pipeline"
 
   providers = {
     aws = aws.workload_infra_role
