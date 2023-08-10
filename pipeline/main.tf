@@ -79,13 +79,13 @@ resource "aws_s3_bucket" "artifact" {
   tags = merge(var.tags, { Name : "${var.configs.s3_artifact_bucket_name}" })
 }
 
-resource "aws_s3_bucket" "pipeline" {
-  for_each = local.pipeline_configs
+# resource "aws_s3_bucket" "pipeline" {
+#   for_each = local.pipeline_configs
 
-  bucket = "${each.key}-${local.current_account_id}"
+#   bucket = "${each.key}-${local.current_account_id}"
 
-  tags = merge(var.tags, { Name : "${each.key}-${local.current_account_id}" })
-}
+#   tags = merge(var.tags, { Name : "${each.key}-${local.current_account_id}" })
+# }
 
 resource "aws_iam_policy" "ci" {
   for_each    = local.ci_configs
