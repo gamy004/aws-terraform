@@ -1,10 +1,10 @@
 locals {
-  repo_configs = {
-    for repo_name, config in lookup(var.configs, "repo_configs", {}) : repo_name => {
-      repo_provider = "${config.repo_provider}"
-      repo_id       = "${config.repo_id}"
-    }
-  }
+  # repo_configs = {
+  #   for repo_name, config in lookup(var.configs, "repo_configs", {}) : repo_name => {
+  #     repo_provider = "${config.provider}"
+  #     repo_id       = "${config.id}"
+  #   }
+  # }
 
   ci_configs = {
     for config in lookup(var.configs, "service_configs", []) : config.service_name => {
@@ -29,15 +29,15 @@ locals {
         #   value = "${config.s3_bucket_name}"
         # },
         {
-          name  = "PROJECT"
-          type  = "PLAINTEXT"
-          value = config.service_name
-        },
-        {
-          name  = "ENV"
-          type  = "PLAINTEXT"
-          value = var.tags.Stage
-        },
+          PROJECT = {
+            type  = "PLAINTEXT"
+            value = config.service_name
+          }
+          ENV = {
+            type  = "PLAINTEXT"
+            value = var.tags.Stage
+          }
+        }
       )
 
     }
@@ -51,15 +51,15 @@ locals {
           for variable_name, variable_config in lookup(config.environment_variables, "review", {}) : variable_name => variable_config
         },
         {
-          name  = "PROJECT"
-          type  = "PLAINTEXT"
-          value = config.service_name
-        },
-        {
-          name  = "ENV"
-          type  = "PLAINTEXT"
-          value = var.tags.Stage
-        },
+          PROJECT = {
+            type  = "PLAINTEXT"
+            value = config.service_name
+          }
+          ENV = {
+            type  = "PLAINTEXT"
+            value = var.tags.Stage
+          }
+        }
       )
 
     }
@@ -67,9 +67,10 @@ locals {
 
   pipeline_configs = {
     for config in lookup(var.configs, "service_configs", []) : config.service_name => {
-      name      = "${config.pipeline_name}"
-      repo_name = "${config.repo_name}"
-      repo_id   = local.repo_configs[config.repo_name].repo_id
+      name        = "${config.pipeline_name}"
+      repo_name   = "${config.repo_name}"
+      repo_id     = var.configs.repo_configs[config.repo_name].id
+      repo_branch = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
     }
   }
 
@@ -230,7 +231,7 @@ resource "aws_iam_role" "ci" {
 
 resource "aws_iam_policy" "base_review" {
   for_each    = local.review_configs
-  description = "Policy used in trust relationship with CodeBuild"
+  description = "Policy used in trust relationship with CodeBuildReview"
   name        = "CodeBuildBasePolicy-${each.value.name}"
   path        = "/service-role/"
   policy = jsonencode(
@@ -283,7 +284,7 @@ resource "aws_iam_policy" "base_review" {
 
 resource "aws_iam_policy" "vpc_review" {
   for_each    = local.review_configs
-  description = "Policy used in trust relationship with CodeBuild"
+  description = "Policy used in trust relationship with CodeBuildReview"
   name        = "CodeBuildVpcPolicy-${each.value.name}"
   path        = "/service-role/"
   policy = jsonencode(
@@ -310,7 +311,7 @@ resource "aws_iam_policy" "vpc_review" {
             StringEquals = {
               "ec2:AuthorizedService" = "codebuild.amazonaws.com"
               "ec2:Subnet" = [
-                "${var.configs.review_subnet}",
+                for subnet_id in var.configs.review_subnet_ids : "arn:aws:ec2:${var.region}:${local.current_account_id}:subnet/${subnet_id}"
               ]
             }
           }
@@ -350,10 +351,10 @@ resource "aws_iam_role" "review" {
   max_session_duration = 3600
   name                 = "${each.value.name}-service-role"
   path                 = "/"
-  tags                 = local.tags
+  tags                 = merge(var.tags, { Name : "${each.value.name}-service-role" })
 
   inline_policy {
-    name = "${var.project_name}-${var.service_name}-review-codebuild-${var.env}-codebuild-policy"
+    name = "${each.value.name}-codebuild-policy"
     policy = jsonencode(
       {
         Statement = [
@@ -650,19 +651,19 @@ resource "aws_codebuild_project" "ci" {
 }
 
 resource "aws_codebuild_project" "review" {
-  for_each           = local.ci_configs
+  for_each           = local.review_configs
   badge_enabled      = false
   build_timeout      = 60
   encryption_key     = data.aws_kms_alias.s3.arn
-  name               = "${var.project_name}-${var.service_name}-review-codebuild-${var.env}"
+  name               = each.value.name
   project_visibility = "PRIVATE"
   queued_timeout     = 480
-  service_role       = aws_iam_role.review[0].arn
-  tags               = local.tags
+  service_role       = aws_iam_role.review[each.key].arn
+  tags               = merge(var.tags, { Name = "${each.value.name}" })
 
   artifacts {
     encryption_disabled    = false
-    name                   = "${var.project_name}-${var.service_name}-review-codebuild-${var.env}"
+    name                   = each.value.name
     override_artifact_name = false
     packaging              = "NONE"
     type                   = "CODEPIPELINE"
@@ -680,21 +681,31 @@ resource "aws_codebuild_project" "review" {
     privileged_mode             = true
     type                        = "LINUX_CONTAINER"
 
-    environment_variable {
-      name  = "AWS_DEFAULT_REGION"
-      type  = "PLAINTEXT"
-      value = "ap-southeast-1"
+    dynamic "environment_variable" {
+      for_each = each.value.environment_variables
+
+      content {
+        name  = environment_variable.key
+        type  = environment_variable.value.type
+        value = environment_variable.value.value
+      }
     }
-    environment_variable {
-      name  = "REVIEW_HOST"
-      type  = "PLAINTEXT"
-      value = "http://172.28.68.10"
-    }
-    environment_variable {
-      name  = "ENV"
-      type  = "PLAINTEXT"
-      value = "dev"
-    }
+
+    # environment_variable {
+    #   name  = "AWS_DEFAULT_REGION"
+    #   type  = "PLAINTEXT"
+    #   value = "ap-southeast-1"
+    # }
+    # environment_variable {
+    #   name  = "REVIEW_HOST"
+    #   type  = "PLAINTEXT"
+    #   value = "http://172.28.68.10"
+    # }
+    # environment_variable {
+    #   name  = "ENV"
+    #   type  = "PLAINTEXT"
+    #   value = "dev"
+    # }
   }
 
   source {
@@ -706,16 +717,14 @@ resource "aws_codebuild_project" "review" {
   }
 
   vpc_config {
-    security_group_ids = [
-      var.security_group_id
-    ]
-    subnets = var.subnets
-    vpc_id  = var.vpc_id
+    security_group_ids = var.configs.review_security_group_ids
+    subnets            = var.configs.review_subnet_ids
+    vpc_id             = var.vpc_id
   }
 }
 
 resource "aws_codestarconnections_connection" "repo" {
-  for_each = local.repo_configs
+  for_each = var.configs.repo_configs
 
   name          = each.key
   provider_type = each.value.provider
@@ -738,8 +747,8 @@ resource "aws_codepipeline" "pipeline" {
     action {
       category = "Source"
       configuration = {
-        "BranchName"       = var.env == "dev" ? "develop" : "main"
-        ConnectionArn      = aws_codestarconnections_connection.repo[each.value.repo_name].arn
+        "BranchName"       = each.value.repo_branch
+        "ConnectionArn"    = aws_codestarconnections_connection.repo[each.value.repo_name].arn
         "FullRepositoryId" = each.value.repo_id
       }
       input_artifacts = []
@@ -799,7 +808,7 @@ resource "aws_codepipeline" "pipeline" {
     action {
       category = "Deploy"
       configuration = {
-        "ClusterName" = var.cluster_name
+        "ClusterName" = var.configs.cluster_name
         "FileName"    = "imagedefinitions.json"
         "ServiceName" = each.key
       }

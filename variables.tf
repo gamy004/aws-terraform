@@ -79,14 +79,14 @@ variable "backend_configs" {
 variable "build_configs" {
   type = object({
     environment_variables = object({
-      all    = any
+      # all    = any
       build  = any
       review = any
     })
   })
   default = {
     environment_variables = {
-      all    = {}
+      # all    = {}
       build  = {}
       review = {}
     }

@@ -14,10 +14,11 @@ variable "configs" {
     cluster_name                      = string
     parameter_store_access_policy_arn = string
     s3_access_policy_arn              = string
-    cloudfront_dist_id                = string
-    cloudfront_invalidation_role_arn  = string
-    s3_artifact_bucket_name           = string
-    review_subnet                     = string
+    # cloudfront_dist_id                = string
+    cloudfront_invalidation_role_arn = string
+    s3_artifact_bucket_name          = string
+    review_subnet_ids                = list(string)
+    review_security_group_ids        = list(string)
     # subnet_ids         = list(string)
     # security_group_ids = list(string)
     # target_group_arns  = list(string)
@@ -26,7 +27,8 @@ variable "configs" {
       service_name      = string
       ci_build_name     = string
       review_build_name = string
-      s3_bucket_name    = string
+      pipeline_name     = string
+      # s3_bucket_name    = string
       environment_variables = object({
         build = map(
           object({
@@ -47,25 +49,27 @@ variable "configs" {
       })
     }))
     repo_configs = map(object({
-      provider = string
-      id       = string
+      provider           = string
+      id                 = string
+      env_branch_mapping = map(string)
     }))
   })
   default = {
     cluster_name                      = "<project>-cluster-<stage>"
     parameter_store_access_policy_arn = ""
     s3_access_policy_arn              = ""
-    cloudfront_dist_id                = ""
-    cloudfront_invalidation_role_arn  = ""
-    s3_artifact_bucket_name           = "<project>-artifacts"
-    review_subnet                     = ""
+    # cloudfront_dist_id                = ""
+    cloudfront_invalidation_role_arn = ""
+    s3_artifact_bucket_name          = "<project>-artifacts"
+    review_subnet_ids                = []
+    review_security_group_ids        = []
     service_configs = [{
       repo_name         = "<application>-service"
       service_name      = "<application>-service-<environment>"
       ci_build_name     = "<project>-<application>-ci-codebuild-<environment>"
       review_build_name = "<project>-<application>-review-codebuild-<environment>"
       pipeline_name     = "<project>-<application>-codepipeline-<environment>"
-      s3_bucket_name    = "<application>-<environment>-<account>"
+      # s3_bucket_name    = "<application>-<environment>-<account>"
       environment_variables = {
         build = {
           AWS_DEFAULT_REGION = {
@@ -89,6 +93,9 @@ variable "configs" {
       "<application>-service" = {
         provider = "Bitbucket"
         id       = "<project>/<application>-service"
+        env_branch_mapping = {
+          "dev" = "develop"
+        }
       }
     }
   }

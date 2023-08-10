@@ -38,14 +38,14 @@ locals {
           environment_variables = {
             build = merge(
               local.default_environment_variables,
-              lookup(var.build_configs.environment_variables, "all", {}),
+              # lookup(var.build_configs.environment_variables, "all", {}),
               lookup(var.build_configs.environment_variables.build, "all", {}),
               lookup(var.build_configs.environment_variables.build, "${application}-service", {}),
               lookup(var.build_configs.environment_variables.build, "${application}-service-${environment}", {}),
             )
             review = merge(
               local.default_environment_variables,
-              lookup(var.build_configs.environment_variables, "all", {}),
+              # lookup(var.build_configs.environment_variables, "all", {}),
               lookup(var.build_configs.environment_variables.review, "${application}-service", {}),
               lookup(var.build_configs.environment_variables.review, "${application}-service-${environment}", {}),
             )
@@ -196,9 +196,18 @@ data "aws_subnets" "public_subnets" {
 }
 
 data "aws_subnet" "review" {
+  provider = aws.workload_infra_role
   filter {
     name   = "tag:Name"
     values = ["${data.aws_iam_account_alias.workload_account_alias.account_alias}-app-b"]
+  }
+}
+
+data "aws_security_group" "review" {
+  provider = aws.workload_infra_role
+  filter {
+    name   = "tag:Name"
+    values = ["kmutt-codebuild-sg-${var.stage}"]
   }
 }
 
@@ -358,7 +367,8 @@ module "pipeline" {
     s3_access_policy_arn              = data.aws_iam_policy.s3_access.arn
     cloudfront_invalidation_role_arn  = data.aws_iam_role.cloudfront_invalidation_role.arn
     s3_artifact_bucket_name           = "${var.project_name}-artifacts"
-    review_subnet                     = data.aws_subnet.review.arn
+    review_subnet_ids                 = [data.aws_subnet.review.id]
+    review_security_group_ids         = [data.aws_security_group.review.id]
     service_configs                   = local.service_configs
     repo_configs                      = try(var.repo_configs, {})
   }
