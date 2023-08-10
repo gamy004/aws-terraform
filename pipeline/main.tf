@@ -15,10 +15,10 @@ locals {
           #             type  = "PLAINTEXT"
           # value = "${var.configs.cloudfront_dist_id}"
           #           }
-          S3_BUCKET = {
-            type  = "PLAINTEXT"
-            value = "${aws_s3_bucket.pipeline[config.service_name].id}"
-          }
+          # S3_BUCKET = {
+          #   type  = "PLAINTEXT"
+          #   value = "${aws_s3_bucket.pipeline[config.service_name].id}"
+          # }
           PROJECT = {
             type  = "PLAINTEXT"
             value = config.service_name
