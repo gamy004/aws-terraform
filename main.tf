@@ -23,11 +23,6 @@ locals {
       type  = "PLAINTEXT"
       value = "${var.aws_region}"
     }
-
-    DOCKER_PASSWORD = {
-      type  = "PLAINTEXT"
-      value = "${var.build_configs.docker_password}"
-    }
   }
 
   service_configs = flatten([
@@ -35,12 +30,26 @@ locals {
       for application in var.applications : merge(
         lookup(var.backend_configs, "${application}-${environment}", {}),
         {
-          service_name        = "${application}-service-${environment}"
-          pipeline_build_name = "${var.project_name}-${application}-ci-codebuild-${environment}"
-          environment_variables = merge(
-            local.default_environment_variables,
-            lookup(var.build_configs.environment_variables, "${application}-service-${environment}", {}),
-          )
+          repo_name         = "${application}-service"
+          service_name      = "${application}-service-${environment}"
+          ci_build_name     = "${var.project_name}-${application}-ci-codebuild-${environment}"
+          review_build_name = "${var.project_name}-${application}-review-codebuild-${environment}"
+          pipeline_name     = "${var.project_name}-${application}-codepipeline-${environment}"
+          environment_variables = {
+            build = merge(
+              local.default_environment_variables,
+              lookup(var.build_configs.environment_variables, "all", {}),
+              lookup(var.build_configs.environment_variables.build, "all", {}),
+              lookup(var.build_configs.environment_variables.build, "${application}-service", {}),
+              lookup(var.build_configs.environment_variables.build, "${application}-service-${environment}", {}),
+            )
+            review = merge(
+              local.default_environment_variables,
+              lookup(var.build_configs.environment_variables, "all", {}),
+              lookup(var.build_configs.environment_variables.review, "${application}-service", {}),
+              lookup(var.build_configs.environment_variables.review, "${application}-service-${environment}", {}),
+            )
+          }
           tags = {
             Environment = environment
             Application = application
@@ -186,6 +195,13 @@ data "aws_subnets" "public_subnets" {
   }
 }
 
+data "aws_subnet" "review" {
+  filter {
+    name   = "tag:Name"
+    values = ["${data.aws_iam_account_alias.workload_account_alias.account_alias}-app-b"]
+  }
+}
+
 data "aws_db_subnet_group" "database" {
   provider = aws.workload_database_role
   name     = var.db_configs.subnet_group_name
@@ -321,6 +337,12 @@ module "service" {
   tags = local.tags
 }
 
+# resource "aws_s3_bucket" "pipeline" {
+#   bucket = "${var.project_name}-artifacts"
+
+#   tags = merge(var.tags, { Name : "${var.project_name}-artifacts" })
+# }
+
 module "pipeline" {
   source = "./pipeline"
 
@@ -335,7 +357,10 @@ module "pipeline" {
     parameter_store_access_policy_arn = data.aws_iam_policy.parameter_store_access.arn
     s3_access_policy_arn              = data.aws_iam_policy.s3_access.arn
     cloudfront_invalidation_role_arn  = data.aws_iam_role.cloudfront_invalidation_role.arn
+    s3_artifact_bucket_name           = "${var.project_name}-artifacts"
+    review_subnet                     = data.aws_subnet.review.arn
     service_configs                   = local.service_configs
+    repo_configs                      = try(var.repo_configs, {})
   }
   tags = local.tags
 }

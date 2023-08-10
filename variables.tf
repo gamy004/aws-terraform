@@ -78,11 +78,22 @@ variable "backend_configs" {
 
 variable "build_configs" {
   type = object({
-    docker_password       = string
-    environment_variables = any
+    environment_variables = object({
+      all    = any
+      build  = any
+      review = any
+    })
   })
   default = {
-    docker_password       = "password",
-    environment_variables = {}
+    environment_variables = {
+      all    = {}
+      build  = {}
+      review = {}
+    }
   }
+}
+
+variable "repo_configs" {
+  type    = any
+  default = {}
 }
