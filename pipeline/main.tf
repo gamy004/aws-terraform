@@ -2,6 +2,10 @@ locals {
   ci_configs = {
     for config in lookup(var.configs, "service_configs", []) : config.service_name => {
       pipeline_build_name = "${config.pipeline_build_name}"
+      environment_variables = {
+        for variable_name, variable_config in lookup(config, "environment_variables", {}) : variable_name => variable_config
+      }
+
     }
   }
 
@@ -9,6 +13,10 @@ locals {
 }
 
 data "aws_caller_identity" "current" {}
+
+data "aws_kms_alias" "s3" {
+  name = "alias/aws/s3"
+}
 
 resource "aws_iam_policy" "ci" {
   for_each    = local.ci_configs
@@ -94,9 +102,8 @@ resource "aws_iam_role" "ci" {
       {
         Statement = [
           {
-            Action = "sts:AssumeRole"
-            Effect = "Allow"
-            # Resource = "arn:aws:iam::994756134565:role/kmutt-cloudfront-invalidation-nonprod-role"
+            Action   = "sts:AssumeRole"
+            Effect   = "Allow"
             Resource = var.configs.cloudfront_invalidation_role_arn
           },
         ]
@@ -149,54 +156,64 @@ resource "aws_iam_role" "ci" {
   tags = merge(var.tags, { Name : "${each.value.pipeline_build_name}-service-role" })
 }
 
-# resource "aws_codebuild_project" "ci" {
-#   for_each = 
-#   badge_enabled      = false
-#   build_timeout      = 10
-#   encryption_key     = "arn:aws:kms:${var.region}:${local.current_account_id}:alias/aws/s3"
-#   name               = "${var.project_name}-${var.service_name}-ci-codebuild-${var.env}"
-#   project_visibility = "PRIVATE"
-#   queued_timeout     = 480
-#   service_role       = aws_iam_role.ci[0].arn
-#   tags               = local.tags
+resource "aws_codebuild_project" "ci" {
+  for_each           = local.ci_configs
+  badge_enabled      = false
+  build_timeout      = 10
+  encryption_key     = data.aws_kms_alias.s3.arn
+  name               = each.value.pipeline_build_name
+  project_visibility = "PRIVATE"
+  queued_timeout     = 480
+  service_role       = aws_iam_role.ci[each.key].arn
+  tags               = merge(var.tags, { Name : "${each.value.pipeline_build_name}" })
 
-#   artifacts {
-#     encryption_disabled    = false
-#     name                   = "${var.project_name}-${var.service_name}-ci-codebuild-${var.env}"
-#     override_artifact_name = false
-#     packaging              = "NONE"
-#     type                   = "CODEPIPELINE"
-#   }
+  artifacts {
+    encryption_disabled    = false
+    name                   = each.value.pipeline_build_name
+    override_artifact_name = false
+    packaging              = "NONE"
+    type                   = "CODEPIPELINE"
+  }
 
-#   cache {
-#     modes = []
-#     type  = "NO_CACHE"
-#   }
+  cache {
+    modes = []
+    type  = "NO_CACHE"
+  }
 
-#   environment {
-#     compute_type                = "BUILD_GENERAL1_SMALL"
-#     image                       = "aws/codebuild/standard:5.0"
-#     image_pull_credentials_type = "CODEBUILD"
-#     privileged_mode             = true
-#     type                        = "LINUX_CONTAINER"
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/standard:5.0"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = true
+    type                        = "LINUX_CONTAINER"
 
-#     environment_variable {
-#       name  = "AWS_DEFAULT_REGION"
-#       type  = "PLAINTEXT"
-#       value = "${var.region}"
-#     }
-#     environment_variable {
-#       name  = "DOCKER_PASSWORD"
-#       type  = "PLAINTEXT"
-#       value = "kmuttdk832"
-#     }
-#   }
+    dynamic "environment_variable" {
+      for_each = each.value.environment_variables
 
-#   source {
-#     buildspec           = "buildspec.yml"
-#     git_clone_depth     = 0
-#     insecure_ssl        = false
-#     report_build_status = false
-#     type                = "CODEPIPELINE"
-#   }
-# }
+      content {
+        name  = environment_variable.key
+        type  = environment_variable.value.type
+        value = environment_variable.value.value
+      }
+    }
+
+    # environment_variable {
+    #   name  = "AWS_DEFAULT_REGION"
+    #   type  = "PLAINTEXT"
+    #   value = "${var.region}"
+    # }
+    # environment_variable {
+    #   name  = "DOCKER_PASSWORD"
+    #   type  = "PLAINTEXT"
+    #   value = "kmuttdk832"
+    # }
+  }
+
+  source {
+    buildspec           = "buildspec.yml"
+    git_clone_depth     = 0
+    insecure_ssl        = false
+    report_build_status = false
+    type                = "CODEPIPELINE"
+  }
+}

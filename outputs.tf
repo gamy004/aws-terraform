@@ -11,8 +11,8 @@
 #   value = local.db_configs
 # }
 
-output "ecs_configs" {
-  value = var.ecs_configs
+output "backend_configs" {
+  value = var.backend_configs
 }
 
 output "service_configs" {

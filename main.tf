@@ -18,13 +18,29 @@ locals {
     ]
   ])
 
+  default_environment_variables = {
+    AWS_DEFAULT_REGION = {
+      type  = "PLAINTEXT"
+      value = "${var.aws_region}"
+    }
+
+    DOCKER_PASSWORD = {
+      type  = "PLAINTEXT"
+      value = "${var.build_configs.docker_password}"
+    }
+  }
+
   service_configs = flatten([
     for environment in var.environments : [
       for application in var.applications : merge(
-        lookup(var.ecs_configs, "${application}-${environment}", {}),
+        lookup(var.backend_configs, "${application}-${environment}", {}),
         {
           service_name        = "${application}-service-${environment}"
           pipeline_build_name = "${var.project_name}-${application}-ci-codebuild-${environment}"
+          environment_variables = merge(
+            local.default_environment_variables,
+            lookup(var.build_configs.environment_variables, "${application}-service-${environment}", {}),
+          )
           tags = {
             Environment = environment
             Application = application

@@ -21,6 +21,10 @@ variable "configs" {
     service_configs = list(object({
       service_name        = string
       pipeline_build_name = string
+      environment_variables = map(object({
+        type  = string
+        value = any
+      }))
       tags = object({
         Environment = string
         Application = string
@@ -38,6 +42,12 @@ variable "configs" {
     service_configs = [{
       service_name        = "<application>-service-<environment>"
       pipeline_build_name = "<project>-<application>-ci-codebuild-<environment>"
+      environment_variables = {
+        AWS_DEFAULT_REGION = {
+          type  = "PLAINTEXT"
+          value = "ap-southeast-1"
+        }
+      }
       tags = {
         Environment = "<environment>"
         Application = "<application>"

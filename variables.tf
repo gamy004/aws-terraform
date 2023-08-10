@@ -71,7 +71,18 @@ variable "lb_configs" {
   default = {}
 }
 
-variable "ecs_configs" {
+variable "backend_configs" {
   type    = any
   default = {}
+}
+
+variable "build_configs" {
+  type = object({
+    docker_password       = string
+    environment_variables = any
+  })
+  default = {
+    docker_password       = "password",
+    environment_variables = {}
+  }
 }
