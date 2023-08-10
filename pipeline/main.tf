@@ -65,7 +65,6 @@ resource "aws_iam_policy" "ci" {
 
 resource "aws_iam_role" "ci" {
   for_each = local.ci_configs
-
   assume_role_policy = jsonencode(
     {
       Statement = [
@@ -80,20 +79,15 @@ resource "aws_iam_role" "ci" {
       Version = "2012-10-17"
     }
   )
-
   force_detach_policies = false
-
   managed_policy_arns = [
     var.configs.parameter_store_access_policy_arn,
     var.configs.s3_access_policy_arn,
     aws_iam_policy.ci[each.key].arn
   ]
-
   max_session_duration = 3600
   name                 = "${each.value.pipeline_build_name}-service-role"
   path                 = "/"
-  tags                 = merge(var.tages, { Name : "${each.value.pipeline_build_name}-service-role" })
-
   inline_policy {
     name = "allow-assume-role-cloudfront-invalidate-policy"
     policy = jsonencode(
@@ -152,8 +146,8 @@ resource "aws_iam_role" "ci" {
       }
     )
   }
+  tags = merge(var.tags, { Name : "${each.value.pipeline_build_name}-service-role" })
 }
-
 
 # resource "aws_codebuild_project" "ci" {
 #   for_each = 

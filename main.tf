@@ -113,10 +113,22 @@ data "aws_iam_role" "database_monitoring_role" {
   name = "rds-monitoring-role"
 }
 
-data "aws_iam_policy" "parameter_store_access_policy" {
+data "aws_iam_role" "cloudfront_invalidation_role" {
+  provider = aws.network_infra_role
+
+  name = "kmutt-cloudfront-invalidation-${var.stage}-role"
+}
+
+data "aws_iam_policy" "parameter_store_access" {
   provider = aws.workload_infra_role
 
   name = "kmutt-access-parameters-policy"
+}
+
+data "aws_iam_policy" "s3_access" {
+  provider = aws.workload_infra_role
+
+  name = "kmutt-access-s3-policy"
 }
 
 data "aws_subnets" "external_subnets" {
@@ -303,11 +315,11 @@ module "pipeline" {
   region = var.aws_region
   vpc_id = data.aws_vpc.workload_vpc.id
   configs = {
-    cluster_name       = "${var.project_name}-cluster-${var.stage}"
-    subnet_ids         = data.aws_subnets.private_subnets.ids
-    security_group_ids = [module.security_groups.app_sg.id]
-    target_group_arns  = module.internal_lb.private_alb.target_group_arns
-    service_configs    = local.service_configs
+    cluster_name                      = "${var.project_name}-cluster-${var.stage}"
+    parameter_store_access_policy_arn = data.aws_iam_policy.parameter_store_access.arn
+    s3_access_policy_arn              = data.aws_iam_policy.s3_access.arn
+    cloudfront_invalidation_role_arn  = data.aws_iam_role.cloudfront_invalidation_role.arn
+    service_configs                   = local.service_configs
   }
   tags = local.tags
 }
