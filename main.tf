@@ -46,6 +46,7 @@ locals {
             review = merge(
               local.default_environment_variables,
               # lookup(var.build_configs.environment_variables, "all", {}),
+              lookup(var.build_configs.environment_variables.review, "all", {}),
               lookup(var.build_configs.environment_variables.review, "${application}-service", {}),
               lookup(var.build_configs.environment_variables.review, "${application}-service-${environment}", {}),
             )
