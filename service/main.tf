@@ -26,11 +26,11 @@ locals {
           cpu       = try(config.task_cpu, 512)
           memory    = try(config.task_memory, 1024)
           essential = true
-          image     = try(config.image, "public.ecr.aws/lts/apache2:2.4-20.04_beta")
+          image     = "${var.ecr_repositories[config.service_name].repository_url}:latest"
           port_mappings = [
             {
               name          = "${config.service_name}-80-tcp"
-              containerPort = 80
+              containerPort = try(config.task_port, 80)
               protocol      = "tcp"
             }
           ]

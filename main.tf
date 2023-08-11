@@ -335,8 +335,9 @@ module "service" {
     aws = aws.workload_infra_role
   }
 
-  region = var.aws_region
-  vpc_id = data.aws_vpc.workload_vpc.id
+  region           = var.aws_region
+  vpc_id           = data.aws_vpc.workload_vpc.id
+  ecr_repositories = module.pipeline.ecr_repositories
   configs = {
     cluster_name       = "${var.project_name}-cluster-${var.stage}"
     subnet_ids         = data.aws_subnets.private_subnets.ids
