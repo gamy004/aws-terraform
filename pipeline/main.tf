@@ -79,6 +79,17 @@ resource "aws_s3_bucket" "artifact" {
   tags = merge(var.tags, { Name : "${var.configs.s3_artifact_bucket_name}" })
 }
 
+resource "aws_ecr_repository" "pipeline" {
+  for_each             = local.pipeline_configs
+  name                 = each.key
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = merge(var.tags, { Name : "${each.key}" })
+}
 # resource "aws_s3_bucket" "pipeline" {
 #   for_each = local.pipeline_configs
 
