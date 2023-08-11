@@ -19,7 +19,7 @@ locals {
           #   type  = "PLAINTEXT"
           #   value = "${aws_s3_bucket.pipeline[config.service_name].id}"
           # }
-          REPOSITORY_URL = {
+          REPOSITORY_URI = {
             type  = "PLAINTEXT"
             value = "${aws_ecr_repository.pipeline[config.service_name].repository_url}"
           }
