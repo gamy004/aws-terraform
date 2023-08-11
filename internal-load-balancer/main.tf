@@ -58,6 +58,48 @@ locals {
       tags = merge(var.tags, { Name = var.configs.private_nlb_target_group_name })
     }
   ]
+
+  all_api_gateway_network_interface_ids = flatten([
+    for endpoint in data.aws_vpc_endpoint.api_gateway_endpoints : [
+      for network_interface_id in endpoint.network_interface_ids : network_interface_id
+    ]
+  ])
+
+  public_alb_target_groups = [
+    {
+      name             = var.configs.public_alb_target_group_name
+      backend_protocol = "HTTPS"
+      backend_port     = 443
+      target_type      = "ip"
+      targets = {
+        for network_interface in data.aws_network_interface.api_gateway_endpoints : network_interface.subnet_id => {
+          target_id         = network_interface.private_ip
+          port              = 443
+          availability_zone = network_interface.availability_zone
+        }
+      }
+      health_check = {
+        enabled             = true
+        protocol            = "HTTPS"
+        interval            = 30
+        path                = "/"
+        port                = "traffic-port"
+        healthy_threshold   = 3
+        unhealthy_threshold = 3
+        timeout             = 10
+      }
+    } # not register targets during the creation yet, use below lambda function to update target ips
+  ]
+}
+
+data "aws_vpc_endpoint" "api_gateway_endpoints" {
+  for_each = toset(var.configs.api_gateway_vpc_endpoint_ids)
+  id       = each.value
+}
+
+data "aws_network_interface" "api_gateway_endpoints" {
+  for_each = toset(local.all_api_gateway_network_interface_ids)
+  id       = each.value
 }
 
 # Private Application Load Balancer
@@ -157,14 +199,7 @@ module "public_alb" {
     }
   ]
 
-  target_groups = [
-    {
-      name             = var.configs.public_alb_target_group_name
-      backend_protocol = "HTTPS"
-      backend_port     = 443
-      target_type      = "ip"
-    } # not register targets during the creation yet, use below lambda function to update target ips
-  ]
+  target_groups = local.public_alb_target_groups
 
   tags = merge(var.tags, { Name : var.configs.public_alb_name })
 }

@@ -30,6 +30,7 @@ variable "configs" {
     vpc_link_name                = string
     private_nlb_dns_name         = string
     private_nlb_target_group_arn = string
+    vpc_endpoint_ids             = list(string)
     api_configs = list(object({
       host_header_name = string
       tags = object({
@@ -43,6 +44,7 @@ variable "configs" {
     vpc_link_name                = "<project>-vpclink-<stage>"
     private_nlb_dns_name         = ""
     private_nlb_target_group_arn = ""
+    vpc_endpoint_ids             = []
     api_configs = [{
       host_header_name = "<environment>-api-<application>.<domain>"
       tags = {

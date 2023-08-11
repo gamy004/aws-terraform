@@ -221,6 +221,12 @@ data "aws_db_subnet_group" "database" {
   name     = var.db_configs.subnet_group_name
 }
 
+data "aws_vpc_endpoint" "api_gateway_endpoint" {
+  provider     = aws.workload_infra_role
+  vpc_id       = data.aws_vpc.workload_vpc.id
+  service_name = "com.amazonaws.${var.aws_region}.execute-api"
+}
+
 module "security_groups" {
   source = "./seceruity-group"
 
@@ -266,6 +272,7 @@ module "internal_lb" {
     public_alb_subnet_ids          = data.aws_subnets.public_subnets.ids
     private_alb_subnet_ids         = data.aws_subnets.private_subnets.ids
     private_nlb_subnet_ids         = data.aws_subnets.private_subnets.ids
+    api_gateway_vpc_endpoint_ids   = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
     api_configs                    = local.api_configs
   }
   tags = local.tags
@@ -308,6 +315,7 @@ module "api_gateway" {
   configs = {
     name                         = "${var.project_name}-api-gw-${var.stage}"
     vpc_link_name                = "${var.project_name}-vpclink-${var.stage}"
+    vpc_endpoint_ids             = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
     private_nlb_target_group_arn = module.internal_lb.private_nlb.lb_arn
     private_nlb_dns_name         = module.internal_lb.private_nlb.lb_dns_name
     api_configs                  = local.api_configs

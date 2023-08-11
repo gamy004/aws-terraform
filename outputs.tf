@@ -38,3 +38,7 @@
 # output "pipeline_configs" {
 #   value = module.pipeline.pipeline_configs
 # }
+
+# output "api_endpoints" {
+#   value = module.internal_lb.api_endpoints
+# }

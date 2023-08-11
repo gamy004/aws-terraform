@@ -10,7 +10,7 @@ resource "aws_api_gateway_rest_api" "api" {
   put_rest_api_mode            = "merge"
   endpoint_configuration {
     types            = ["PRIVATE"]
-    vpc_endpoint_ids = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
+    vpc_endpoint_ids = var.configs.vpc_endpoint_ids
   }
 
   body = jsonencode({
