@@ -52,7 +52,7 @@ locals {
             )
             ecs = merge(
               local.default_environment_variables,
-              try(var.backend_configs["${application}-service"].environment_variables, {}),
+              try(var.backend_configs["${application}-${environment}"].environment_variables, {}),
             )
           }
           tags = {
