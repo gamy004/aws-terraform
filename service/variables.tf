@@ -42,7 +42,7 @@ variable "configs" {
       service_memory           = 2048 #optional
       task_cpu                 = 512  #optional
       task_memory              = 1024 #optional
-      task_port                = 80   #optional
+      host_port                = 80   #optional
       # image                     = "<image_url>" #optional
       enable_cloudwatch_logging = true #optional
       tags = {

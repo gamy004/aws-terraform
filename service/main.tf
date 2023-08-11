@@ -30,7 +30,8 @@ locals {
           port_mappings = [
             {
               name          = "${config.service_name}-80-tcp"
-              containerPort = try(config.task_port, 80)
+              containerPort = 80
+              hostPort      = try(config.host_port, 80)
               protocol      = "tcp"
             }
           ]
