@@ -86,7 +86,7 @@ locals {
         port                = "traffic-port"
         healthy_threshold   = 5
         unhealthy_threshold = 3
-        timeout             = 105
+        timeout             = 5
         matcher             = "200-403"
       }
     } # not register targets during the creation yet, use below lambda function to update target ips
