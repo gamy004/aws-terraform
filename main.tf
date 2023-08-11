@@ -32,9 +32,9 @@ locals {
         {
           repo_name         = "${application}-service"
           service_name      = "${application}-service-${environment}"
-          ci_build_name     = "${var.project_name}-${application}-service-ci-codebuild-${environment}"
-          review_build_name = "${var.project_name}-${application}-service-review-codebuild-${environment}"
-          pipeline_name     = "${var.project_name}-${application}-service-codepipeline-${environment}"
+          ci_build_name     = "${application}-service-ci-codebuild-${environment}"
+          review_build_name = "${application}-service-review-codebuild-${environment}"
+          pipeline_name     = "${application}-service-codepipeline-${environment}"
           environment_variables = {
             build = merge(
               local.default_environment_variables,
