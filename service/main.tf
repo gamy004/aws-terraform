@@ -26,8 +26,14 @@ locals {
           cpu       = try(config.task_cpu, 512)
           memory    = try(config.task_memory, 1024)
           essential = true
-          environment = try(config.environment_variables, {})
-          image     = "${var.ecr_repositories[config.service_name].repository_url}:latest"
+          environment = [
+            for variable_name, environment_variable in try(config.environment_variables, {}) : {
+              name  = "${variable_name}"
+              type  = "${environment_variable.type}"
+              value = "${environment_variable.value}"
+            }
+          ]
+          image = "${var.ecr_repositories[config.service_name].repository_url}:latest"
           port_mappings = [
             {
               name          = "${config.service_name}-80-tcp"
