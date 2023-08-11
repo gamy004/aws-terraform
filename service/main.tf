@@ -31,7 +31,6 @@ locals {
             {
               name          = "${config.service_name}-80-tcp"
               containerPort = 80
-              hostPort      = try(config.host_port, 80)
               protocol      = "tcp"
             }
           ]
