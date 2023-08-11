@@ -27,7 +27,7 @@ locals {
           memory    = try(config.task_memory, 1024)
           essential = true
           environment = [
-            for variable_name, environment_variable in try(config.environment_variables, {}) : {
+            for variable_name, environment_variable in try(config.environment_variables.ecs, {}) : {
               name  = "${variable_name}"
               type  = "${environment_variable.type}"
               value = "${environment_variable.value}"

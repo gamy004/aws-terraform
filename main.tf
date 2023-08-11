@@ -50,6 +50,10 @@ locals {
               lookup(var.build_configs.environment_variables.review, "${application}-service", {}),
               lookup(var.build_configs.environment_variables.review, "${application}-service-${environment}", {}),
             )
+            ecs = merge(
+              local.default_environment_variables,
+              try(var.backend_configs["${application}-service"].environment_variables, {}),
+            )
           }
           tags = {
             Environment = environment
