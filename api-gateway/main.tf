@@ -1,3 +1,7 @@
+locals {
+  custom_internal_domain_name = "${var.tags.Project}-internal-api-${var.tags.Stage}.${var.domain_name}"
+}
+
 data "aws_vpc_endpoint" "api_gateway_endpoint" {
   vpc_id       = var.vpc_id
   service_name = "com.amazonaws.${var.region}.execute-api"
@@ -23,10 +27,13 @@ resource "aws_api_gateway_rest_api" "api" {
       "/" = {
         get = {
           x-amazon-apigateway-integration = {
+            requestParameters = {
+              "integration.request.header.x-forward-host-header" : "method.request.header.host",
+            }
             httpMethod           = "GET"
             payloadFormatVersion = "1.0"
             type                 = "HTTP_PROXY"
-            uri                  = "https://${var.configs.private_nlb_dns_name}/"
+            uri                  = "https://${local.custom_internal_domain_name}/"
             connectionType       = "VPC_LINK"
             connectionId         = aws_api_gateway_vpc_link.vpc_link_to_nlb.id
           }
@@ -50,7 +57,8 @@ resource "aws_api_gateway_method" "proxy" {
   http_method   = "ANY"
   authorization = "NONE"
   request_parameters = {
-    "method.request.path.proxy" = true
+    "method.request.header.host" = true
+    "method.request.path.proxy"  = true
   }
 }
 
@@ -60,14 +68,15 @@ resource "aws_api_gateway_method" "proxy_options" {
   http_method   = "OPTIONS"
   authorization = "NONE"
   request_parameters = {
-    "method.request.path.proxy" = true
+    "method.request.header.host" = true
+    "method.request.path.proxy"  = true
   }
 }
 
 resource "aws_api_gateway_integration" "proxy" {
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = aws_api_gateway_resource.proxy.id
-  uri                     = "https://${var.configs.private_nlb_dns_name}/{proxy}"
+  uri                     = "https://${local.custom_internal_domain_name}/{proxy}"
   http_method             = aws_api_gateway_method.proxy.http_method
   type                    = "HTTP_PROXY"
   integration_http_method = "ANY"
@@ -75,7 +84,8 @@ resource "aws_api_gateway_integration" "proxy" {
   connection_id           = aws_api_gateway_vpc_link.vpc_link_to_nlb.id
   cache_key_parameters    = ["method.request.path.proxy"]
   request_parameters = {
-    "integration.request.path.proxy" = "method.request.path.proxy"
+    "integration.request.header.x-forward-host-header" = "method.request.header.host"
+    "integration.request.path.proxy"                   = "method.request.path.proxy"
   }
 }
 
@@ -139,15 +149,13 @@ resource "aws_api_gateway_rest_api_policy" "api_policy" {
 }
 
 resource "aws_api_gateway_domain_name" "api_domain" {
-  count = length(var.configs.api_configs)
-
   regional_certificate_arn = var.certificate_arn
-  domain_name              = var.configs.api_configs[count.index].host_header_name
+  domain_name              = local.custom_internal_domain_name
   endpoint_configuration {
     types = ["REGIONAL"]
   }
 
-  tags = merge(var.tags, try(var.configs.api_configs[count.index].tags, {}))
+  tags = merge(var.tags, { Name = local.custom_internal_domain_name })
 }
 
 resource "aws_api_gateway_deployment" "api_deployment" {
@@ -171,7 +179,7 @@ resource "aws_api_gateway_base_path_mapping" "api_mapping" {
   count       = length(var.configs.api_configs)
   api_id      = aws_api_gateway_rest_api.api.id
   stage_name  = aws_api_gateway_stage.api_v1.stage_name
-  domain_name = var.configs.api_configs[count.index].host_header_name
+  domain_name = local.custom_internal_domain_name
 }
 
 resource "aws_api_gateway_method_settings" "api_settings" {
