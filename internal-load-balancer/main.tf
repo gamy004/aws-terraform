@@ -1,4 +1,21 @@
 locals {
+  public_alb_https_listener_rules = [
+    for index, api_config in var.configs.api_configs : {
+      https_listener_index = 0
+      priority             = index + 1
+      actions = [
+        {
+          type               = "forward"
+          target_group_index = 0
+        }
+      ]
+      conditions = [{
+        host_headers = [api_config.host_header_name]
+      }]
+      tags = merge(var.tags, try(api_config.tags, {}), { Name = api_config.target_group_name })
+    }
+  ]
+
   private_alb_https_listener_rules = [
     for index, api_config in var.configs.api_configs : {
       https_listener_index = 0
@@ -192,13 +209,19 @@ module "public_alb" {
 
   https_listeners = [
     {
-      port               = 443
-      protocol           = "HTTPS"
-      certificate_arn    = var.certificate_arn
-      action_type        = "forward"
-      target_group_index = 0
+      port            = 443
+      protocol        = "HTTPS"
+      certificate_arn = var.certificate_arn
+      action_type     = "fixed-response"
+      fixed_response = {
+        content_type = "text/plain"
+        status_code  = 200
+        message_body = "OK"
+      }
     }
   ]
+
+  https_listener_rules = local.public_alb_https_listener_rules
 
   target_groups = local.public_alb_target_groups
 
