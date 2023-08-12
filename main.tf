@@ -139,6 +139,13 @@ data "aws_acm_certificate" "network_certificate" {
   most_recent = true
 }
 
+data "aws_acm_certificate" "cloudfront_certificate" {
+  provider    = aws.network_infra_role_for_cloudfront
+  domain      = var.domain_name
+  types       = ["AMAZON_ISSUED"]
+  most_recent = true
+}
+
 data "aws_iam_role" "api_gateway_cloudwatch_role" {
   provider = aws.workload_infra_role
 
@@ -401,7 +408,7 @@ module "cdn" {
   }
 
   vpc_id          = data.aws_vpc.network_vpc.id
-  certificate_arn = data.aws_acm_certificate.network_certificate.arn
+  certificate_arn = data.aws_acm_certificate.cloudfront_certificate.arn
   configs = {
     cf_name                  = "${var.project_name}-api-cf-${var.stage}"
     waf_name                 = "${var.project_name}-api-waf-${var.stage}"
