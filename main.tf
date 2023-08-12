@@ -93,6 +93,14 @@ provider "aws" {
   }
 }
 
+provider "aws" {
+  alias  = "network_infra_role_for_cloudfront"
+  region = "us-east-1"
+  assume_role {
+    role_arn = "arn:aws:iam::${var.network_account_id}:role/KMUTTInfraRole"
+  }
+}
+
 data "aws_iam_account_alias" "workload_account_alias" {
   provider = aws.workload_infra_role
 }
@@ -279,25 +287,25 @@ module "internal_lb" {
 }
 
 ## External Load Balancer
-# module "external_lb" {
-#   source = "./external-load-balancer"
+module "external_lb" {
+  source = "./external-load-balancer"
 
-#   providers = {
-#     aws = aws.network_infra_role
-#   }
+  providers = {
+    aws = aws.network_infra_role
+  }
 
-#   region          = var.aws_region
-#   vpc_id          = data.aws_vpc.network_vpc.id
-#   certificate_arn = data.aws_acm_certificate.network_certificate.arn
-#   configs = {
-#     name                         = "${var.project_name}-external-alb-${var.stage}"
-#     target_group_name            = "${var.project_name}-external-alb-tg-${var.stage}"
-#     security_group_ids           = [module.security_groups.external_alb_sg.id]
-#     subnet_ids                   = data.aws_subnets.external_subnets.ids
-#     internal_public_alb_dns_name = module.internal_lb.public_alb.lb_dns_name
-#   }
-#   tags = local.tags
-# }
+  region          = var.aws_region
+  vpc_id          = data.aws_vpc.network_vpc.id
+  certificate_arn = data.aws_acm_certificate.network_certificate.arn
+  configs = {
+    name                         = "${var.project_name}-external-alb-${var.stage}"
+    target_group_name            = "${var.project_name}-external-alb-tg-${var.stage}"
+    security_group_ids           = [module.security_groups.external_alb_sg.id]
+    subnet_ids                   = data.aws_subnets.external_subnets.ids
+    internal_public_alb_dns_name = module.internal_lb.public_alb.lb_dns_name
+  }
+  tags = local.tags
+}
 
 ## API Gateway
 module "api_gateway" {
@@ -340,6 +348,7 @@ module "database" {
   tags                = local.tags
 }
 
+## ECS
 module "service" {
   source = "./service"
 
@@ -360,12 +369,7 @@ module "service" {
   tags = local.tags
 }
 
-# resource "aws_s3_bucket" "pipeline" {
-#   bucket = "${var.project_name}-artifacts"
-
-#   tags = merge(var.tags, { Name : "${var.project_name}-artifacts" })
-# }
-
+## CODE PIPELINE
 module "pipeline" {
   source = "./pipeline"
 
@@ -386,5 +390,59 @@ module "pipeline" {
     service_configs                   = local.service_configs
     repo_configs                      = try(var.repo_configs, {})
   }
+  tags = local.tags
+}
+
+module "cdn" {
+  source = "./cdn"
+
+  providers = {
+    aws = aws.network_infra_role_for_cloudfront
+  }
+
+  vpc_id          = data.aws_vpc.network_vpc.id
+  certificate_arn = data.aws_acm_certificate.network_certificate.arn
+  configs = {
+    cf_name                  = "${var.project_name}-api-cf-${var.stage}"
+    waf_name                 = "${var.project_name}-api-waf-${var.stage}"
+    waf_ip_set_outbound_name = "kmutt-nat-outbound-ip-set"
+    associate_domains = [
+      for api_config in local.api_configs : api_config.host_header_name
+    ]
+    default_origin = {
+      name        = "external-alb"
+      domain_name = module.external_lb.external_alb.lb_dns_name
+      custom_origin_config = {
+        http_port                = 80
+        https_port               = 443
+        origin_keepalive_timeout = 5
+        origin_protocol_policy   = "https-only"
+        origin_read_timeout      = 30
+        origin_ssl_protocols = [
+          "SSLv3",
+          "TLSv1",
+        ]
+      }
+
+      cache_behaviour = {
+        allowed_methods         = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+        cached_methods          = ["GET", "HEAD"]
+        compress                = true
+        default_ttl             = 86400
+        max_ttl                 = 31536000
+        min_ttl                 = 0
+        smooth_streaming        = false
+        trusted_key_groups      = []
+        trusted_signers         = []
+        viewer_protocol_policy  = "redirect-to-https"
+        headers                 = ["*"]
+        query_string            = true
+        query_string_cache_keys = []
+        cookies_forward         = "all"
+      }
+    }
+    non_default_origins = {}
+  }
+
   tags = local.tags
 }
