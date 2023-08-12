@@ -1,11 +1,24 @@
+locals {
+  api_gateway_configs = {
+    for api_config in var.configs.api_configs : api_config.api_gateway_name => api_config
+  }
+}
 data "aws_vpc_endpoint" "api_gateway_endpoint" {
   vpc_id       = var.vpc_id
   service_name = "com.amazonaws.${var.region}.execute-api"
 }
 
+resource "aws_api_gateway_vpc_link" "vpc_link_to_nlb" {
+  name        = var.configs.vpc_link_name
+  description = var.configs.vpc_link_name
+  target_arns = [var.configs.private_nlb_target_group_arn]
+  tags        = merge(var.tags, { Name = var.configs.vpc_link_name })
+}
+
 resource "aws_api_gateway_rest_api" "api" {
-  name                         = var.configs.name
-  description                  = "THe API Gateway for ${var.configs.name}"
+  for_each                     = local.api_gateway_configs
+  name                         = each.key
+  description                  = "THe API Gateway for ${each.key}"
   disable_execute_api_endpoint = true
   put_rest_api_mode            = "merge"
   endpoint_configuration {
@@ -26,7 +39,7 @@ resource "aws_api_gateway_rest_api" "api" {
             httpMethod           = "GET"
             payloadFormatVersion = "1.0"
             type                 = "HTTP_PROXY"
-            uri                  = "https://${var.configs.private_nlb_dns_name}/"
+            uri                  = "https://${each.value.host_header_name}/"
             connectionType       = "VPC_LINK"
             connectionId         = aws_api_gateway_vpc_link.vpc_link_to_nlb.id
           }
@@ -35,18 +48,20 @@ resource "aws_api_gateway_rest_api" "api" {
     }
   })
 
-  tags = merge(var.tags, { Name = var.configs.name })
+  tags = merge(var.tags, { Name = each.key })
 }
 
 resource "aws_api_gateway_resource" "proxy" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  for_each    = local.api_gateway_configs
+  rest_api_id = aws_api_gateway_rest_api.api[each.key].id
+  parent_id   = aws_api_gateway_rest_api.api[each.key].root_resource_id
   path_part   = "{proxy+}"
 }
 
 resource "aws_api_gateway_method" "proxy" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.proxy.id
+  for_each      = local.api_gateway_configs
+  rest_api_id   = aws_api_gateway_rest_api.api[each.key].id
+  resource_id   = aws_api_gateway_resource.proxy[each.key].id
   http_method   = "ANY"
   authorization = "NONE"
   request_parameters = {
@@ -55,8 +70,9 @@ resource "aws_api_gateway_method" "proxy" {
 }
 
 resource "aws_api_gateway_method" "proxy_options" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.proxy.id
+  for_each      = local.api_gateway_configs
+  rest_api_id   = aws_api_gateway_rest_api.api[each.key].id
+  resource_id   = aws_api_gateway_resource.proxy[each.key].id
   http_method   = "OPTIONS"
   authorization = "NONE"
   request_parameters = {
@@ -65,10 +81,11 @@ resource "aws_api_gateway_method" "proxy_options" {
 }
 
 resource "aws_api_gateway_integration" "proxy" {
-  rest_api_id             = aws_api_gateway_rest_api.api.id
-  resource_id             = aws_api_gateway_resource.proxy.id
-  uri                     = "https://${var.configs.private_nlb_dns_name}/{proxy}"
-  http_method             = aws_api_gateway_method.proxy.http_method
+  for_each                = local.api_gateway_configs
+  rest_api_id             = aws_api_gateway_rest_api.api[each.key].id
+  resource_id             = aws_api_gateway_resource.proxy[each.key].id
+  uri                     = "https://${each.value.host_header_name}/{proxy}"
+  http_method             = aws_api_gateway_method.proxy[each.key].http_method
   type                    = "HTTP_PROXY"
   integration_http_method = "ANY"
   connection_type         = "VPC_LINK"
@@ -80,9 +97,10 @@ resource "aws_api_gateway_integration" "proxy" {
 }
 
 resource "aws_api_gateway_integration" "proxy_options" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.proxy.id
-  http_method = aws_api_gateway_method.proxy_options.http_method
+  for_each    = local.api_gateway_configs
+  rest_api_id = aws_api_gateway_rest_api.api[each.key].id
+  resource_id = aws_api_gateway_resource.proxy[each.key].id
+  http_method = aws_api_gateway_method.proxy_options[each.key].http_method
   type        = "MOCK"
   request_templates = {
     "application/json" = jsonencode({
@@ -92,9 +110,10 @@ resource "aws_api_gateway_integration" "proxy_options" {
 }
 
 resource "aws_api_gateway_method_response" "proxy_options_method_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.proxy.id
-  http_method = aws_api_gateway_method.proxy_options.http_method
+  for_each    = local.api_gateway_configs
+  rest_api_id = aws_api_gateway_rest_api.api[each.key].id
+  resource_id = aws_api_gateway_resource.proxy[each.key].id
+  http_method = aws_api_gateway_method.proxy_options[each.key].http_method
   status_code = "200"
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = true
@@ -104,10 +123,11 @@ resource "aws_api_gateway_method_response" "proxy_options_method_response" {
 }
 
 resource "aws_api_gateway_integration_response" "proxy_options_integration_response" {
-  rest_api_id      = aws_api_gateway_rest_api.api.id
-  resource_id      = aws_api_gateway_resource.proxy.id
-  http_method      = aws_api_gateway_method.proxy_options.http_method
-  status_code      = aws_api_gateway_method_response.proxy_options_method_response.status_code
+  for_each         = local.api_gateway_configs
+  rest_api_id      = aws_api_gateway_rest_api.api[each.key].id
+  resource_id      = aws_api_gateway_resource.proxy[each.key].id
+  http_method      = aws_api_gateway_method.proxy_options[each.key].http_method
+  status_code      = aws_api_gateway_method_response.proxy_options_method_response[each.key].status_code
   content_handling = "CONVERT_TO_TEXT"
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,sentry-trace,baggage'"
@@ -117,6 +137,7 @@ resource "aws_api_gateway_integration_response" "proxy_options_integration_respo
 }
 
 data "aws_iam_policy_document" "api_access_policy" {
+  for_each = local.api_gateway_configs
   statement {
     effect = "Allow"
     principals {
@@ -124,7 +145,7 @@ data "aws_iam_policy_document" "api_access_policy" {
       identifiers = ["*"]
     }
     actions   = ["execute-api:Invoke"]
-    resources = ["${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"]
+    resources = ["${aws_api_gateway_rest_api.api[each.key].execution_arn}/*/*/*"]
     condition {
       test     = "StringEquals"
       variable = "aws:sourceVpce"
@@ -134,27 +155,28 @@ data "aws_iam_policy_document" "api_access_policy" {
 }
 
 resource "aws_api_gateway_rest_api_policy" "api_policy" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  policy      = data.aws_iam_policy_document.api_access_policy.json
+  for_each    = local.api_gateway_configs
+  rest_api_id = aws_api_gateway_rest_api.api[each.key].id
+  policy      = data.aws_iam_policy_document.api_access_policy[each.key].json
 }
 
 resource "aws_api_gateway_domain_name" "api_domain" {
-  count = length(var.configs.api_configs)
-
+  for_each                 = local.api_gateway_configs
   regional_certificate_arn = var.certificate_arn
-  domain_name              = var.configs.api_configs[count.index].host_header_name
+  domain_name              = each.value.host_header_name
   endpoint_configuration {
     types = ["REGIONAL"]
   }
 
-  tags = merge(var.tags, try(var.configs.api_configs[count.index].tags, {}))
+  tags = merge(var.tags, try(each.value.tags, {}))
 }
 
 resource "aws_api_gateway_deployment" "api_deployment" {
+  for_each    = local.api_gateway_configs
   depends_on  = [aws_api_gateway_rest_api_policy.api_policy]
-  rest_api_id = aws_api_gateway_rest_api.api.id
+  rest_api_id = aws_api_gateway_rest_api.api[each.key].id
   triggers = {
-    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.api.body))
+    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.api[each.key].body))
   }
   lifecycle {
     create_before_destroy = true
@@ -162,21 +184,23 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 }
 
 resource "aws_api_gateway_stage" "api_v1" {
-  deployment_id = aws_api_gateway_deployment.api_deployment.id
-  rest_api_id   = aws_api_gateway_rest_api.api.id
+  for_each      = local.api_gateway_configs
+  deployment_id = aws_api_gateway_deployment.api_deployment[each.key].id
+  rest_api_id   = aws_api_gateway_rest_api.api[each.key].id
   stage_name    = "v1"
 }
 
 resource "aws_api_gateway_base_path_mapping" "api_mapping" {
-  count       = length(var.configs.api_configs)
-  api_id      = aws_api_gateway_rest_api.api.id
-  stage_name  = aws_api_gateway_stage.api_v1.stage_name
-  domain_name = var.configs.api_configs[count.index].host_header_name
+  for_each    = local.api_gateway_configs
+  api_id      = aws_api_gateway_rest_api.api[each.key].id
+  stage_name  = aws_api_gateway_stage.api_v1[each.key].stage_name
+  domain_name = each.value.host_header_name
 }
 
 resource "aws_api_gateway_method_settings" "api_settings" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  stage_name  = aws_api_gateway_stage.api_v1.stage_name
+  for_each    = local.api_gateway_configs
+  rest_api_id = aws_api_gateway_rest_api.api[each.key].id
+  stage_name  = aws_api_gateway_stage.api_v1[each.key].stage_name
   method_path = "*/*"
   settings {
     metrics_enabled        = true
@@ -238,10 +262,3 @@ resource "aws_api_gateway_method_settings" "api_settings" {
 
 #   tags = merge(var.tags, { Name = var.configs.name })
 # }
-
-resource "aws_api_gateway_vpc_link" "vpc_link_to_nlb" {
-  name        = var.configs.vpc_link_name
-  description = var.configs.vpc_link_name
-  target_arns = [var.configs.private_nlb_target_group_arn]
-  tags        = merge(var.tags, { Name = var.configs.vpc_link_name })
-}

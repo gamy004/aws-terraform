@@ -33,6 +33,7 @@ variable "configs" {
     vpc_endpoint_ids             = list(string)
     api_configs = list(object({
       host_header_name = string
+      api_gateway_name = string
       tags = object({
         Environment = string
         Application = string
@@ -47,6 +48,7 @@ variable "configs" {
     vpc_endpoint_ids             = []
     api_configs = [{
       host_header_name = "<environment>-api-<application>.<domain>"
+      api_gateway_name = "<application>-api-gw-<environment>"
       tags = {
         Environment = "<environment>"
         Application = "<>"

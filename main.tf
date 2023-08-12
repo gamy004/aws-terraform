@@ -9,6 +9,7 @@ locals {
     for environment in var.environments : [
       for application in var.applications : {
         host_header_name  = "${environment}-api-${application}.${var.domain_name}"
+        api_gateway_name  = "${application}-api-gw-${environment}"
         target_group_name = "${application}-ecs-tg-${environment}"
         tags = {
           Environment = environment
