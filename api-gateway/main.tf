@@ -26,6 +26,16 @@ resource "aws_api_gateway_rest_api" "api" {
     paths = {
       "/" = {
         get = {
+          parameters = [
+            {
+              name = "host",
+              in   = "header",
+              schema = {
+                type = "string"
+              }
+            }
+          ]
+
           x-amazon-apigateway-integration = {
             requestParameters = {
               "integration.request.header.x-forward-host-header" : "method.request.header.host",
