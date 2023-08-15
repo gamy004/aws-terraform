@@ -679,7 +679,7 @@ module "authentication" {
     password_minimum_length  = 6
     username_attributes      = ["email"]
     auto_verified_attributes = []
-    required_user_attributes = ["email"]
+    required_user_attributes = ["email", "family_name", "given_name"]
     clients                  = each.value.clients
     tags                     = each.value.tags
   }

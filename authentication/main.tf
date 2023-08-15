@@ -36,7 +36,7 @@ resource "aws_cognito_user_pool" "this" {
     developer_only_attribute = false
     mutable                  = true
     name                     = "email"
-    required                 = true
+    required                 = contains(var.configs.required_user_attributes, "email")
 
     string_attribute_constraints {
       min_length = 1
@@ -49,7 +49,7 @@ resource "aws_cognito_user_pool" "this" {
     developer_only_attribute = false
     mutable                  = true
     name                     = "family_name"
-    required                 = true
+    required                 = contains(var.configs.required_user_attributes, "family_name")
 
     string_attribute_constraints {
       min_length = 1
@@ -62,7 +62,7 @@ resource "aws_cognito_user_pool" "this" {
     developer_only_attribute = false
     mutable                  = true
     name                     = "given_name"
-    required                 = true
+    required                 = contains(var.configs.required_user_attributes, "given_name")
 
     string_attribute_constraints {
       min_length = 1
