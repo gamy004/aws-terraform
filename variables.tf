@@ -76,19 +76,32 @@ variable "backend_configs" {
   default = {}
 }
 
+variable "frontend_configs" {
+  type    = any
+  default = {}
+}
+
 variable "build_configs" {
   type = object({
     environment_variables = object({
       # all    = any
       build  = any
       review = any
-    })
+    }),
+    pipeline_stages = any
   })
   default = {
     environment_variables = {
       # all    = {}
       build  = {}
       review = {}
+    }
+    pipeline_stages = {
+      "<application>-service-<environment>" = {
+        build  = true
+        deploy = true
+        review = true
+      }
     }
   }
 }

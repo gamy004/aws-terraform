@@ -22,13 +22,43 @@ variable "configs" {
     # subnet_ids         = list(string)
     # security_group_ids = list(string)
     # target_group_arns  = list(string)
-    service_configs = list(object({
+    service_pipeline_configs = list(object({
       repo_name         = string
       service_name      = string
       ci_build_name     = string
       review_build_name = string
       pipeline_name     = string
-      # s3_bucket_name    = string
+      build             = bool
+      deploy            = bool
+      review            = bool
+      environment_variables = object({
+        build = map(
+          object({
+            type  = string
+            value = any
+          })
+        )
+        review = map(
+          object({
+            type  = string
+            value = any
+          })
+        )
+      })
+      tags = object({
+        Environment = string
+        Application = string
+      })
+    }))
+    web_pipeline_configs = list(object({
+      repo_name         = string
+      bucket_name       = string
+      ci_build_name     = string
+      review_build_name = string
+      pipeline_name     = string
+      build             = bool
+      deploy            = bool
+      review            = bool
       environment_variables = object({
         build = map(
           object({
@@ -63,13 +93,44 @@ variable "configs" {
     s3_artifact_bucket_name          = "<project>-artifacts"
     review_subnet_ids                = []
     review_security_group_ids        = []
-    service_configs = [{
+    service_pipeline_configs = [{
       repo_name         = "<application>-service"
       service_name      = "<application>-service-<environment>"
-      ci_build_name     = "<project>-<application>-ci-codebuild-<environment>"
-      review_build_name = "<project>-<application>-review-codebuild-<environment>"
-      pipeline_name     = "<project>-<application>-codepipeline-<environment>"
+      ci_build_name     = "<project>-<application>-service-ci-codebuild-<environment>"
+      review_build_name = "<project>-<application>-service-review-codebuild-<environment>"
+      pipeline_name     = "<project>-<application>-service-codepipeline-<environment>"
+      build             = true
+      deploy            = true
+      review            = true
       # s3_bucket_name    = "<application>-<environment>-<account>"
+      environment_variables = {
+        build = {
+          AWS_DEFAULT_REGION = {
+            type  = "PLAINTEXT"
+            value = "ap-southeast-1"
+          }
+        }
+        review = {
+          AWS_DEFAULT_REGION = {
+            type  = "PLAINTEXT"
+            value = "ap-southeast-1"
+          }
+        }
+      }
+      tags = {
+        Environment = "<environment>"
+        Application = "<application>"
+      }
+    }]
+    web_pipeline_configs = [{
+      repo_name         = "<application>-web"
+      bucket_name       = "<application>-web-<environment>"
+      ci_build_name     = "<project>-<application>-web-ci-codebuild-<environment>"
+      review_build_name = "<project>-<application>-web-review-codebuild-<environment>"
+      pipeline_name     = "<project>-<application>-web-codepipeline-<environment>"
+      build             = true
+      deploy            = false
+      review            = true
       environment_variables = {
         build = {
           AWS_DEFAULT_REGION = {
@@ -93,6 +154,13 @@ variable "configs" {
       "<application>-service" = {
         provider = "Bitbucket"
         id       = "<project>/<application>-service"
+        env_branch_mapping = {
+          "dev" = "develop"
+        }
+      }
+      "<application>-web" = {
+        provider = "Bitbucket"
+        id       = "<project>/<application>-web"
         env_branch_mapping = {
           "dev" = "develop"
         }

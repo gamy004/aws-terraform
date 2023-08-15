@@ -1,72 +1,124 @@
 locals {
-  ci_configs = {
-    for config in lookup(var.configs, "service_configs", []) : config.service_name => {
-      name = "${config.ci_build_name}"
-      environment_variables = merge(
-        {
-          for variable_name, variable_config in lookup(config.environment_variables, "build", {}) : variable_name => variable_config
-        },
-        {
-          #           CF_ROLE_ARN = {
-          #             type  = "PLAINTEXT"
-          # value = "${var.configs.cloudfront_invalidation_role_arn}"
-          #           }
-          #           DISTRIBUTION_ID = {
-          #             type  = "PLAINTEXT"
-          # value = "${var.configs.cloudfront_dist_id}"
-          #           }
-          # S3_BUCKET = {
-          #   type  = "PLAINTEXT"
-          #   value = "${aws_s3_bucket.pipeline[config.service_name].id}"
-          # }
-          REPOSITORY_URI = {
-            type  = "PLAINTEXT"
-            value = "${aws_ecr_repository.pipeline[config.service_name].repository_url}"
+  ci_configs = merge(
+    {
+      for config in lookup(var.configs, "service_pipeline_configs", []) : config.service_name => {
+        name = "${config.ci_build_name}"
+        environment_variables = merge(
+          {
+            for variable_name, variable_config in lookup(config.environment_variables, "build", {}) : variable_name => variable_config
+          },
+          {
+            REPOSITORY_URI = {
+              type  = "PLAINTEXT"
+              value = "${aws_ecr_repository.pipeline[config.service_name].repository_url}"
+            }
+            PROJECT = {
+              type  = "PLAINTEXT"
+              value = config.service_name
+            }
+            ENV = {
+              type  = "PLAINTEXT"
+              value = var.tags.Stage
+            }
           }
-          PROJECT = {
-            type  = "PLAINTEXT"
-            value = config.service_name
+        )
+      }
+    },
+    {
+      for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
+        name = "${config.ci_build_name}"
+        environment_variables = merge(
+          {
+            for variable_name, variable_config in lookup(config.environment_variables, "build", {}) : variable_name => variable_config
+          },
+          {
+            REPOSITORY_URI = {
+              type  = "PLAINTEXT"
+              value = "${aws_ecr_repository.pipeline[config.bucket_name].repository_url}"
+            }
+            PROJECT = {
+              type  = "PLAINTEXT"
+              value = config.bucket_name
+            }
+            ENV = {
+              type  = "PLAINTEXT"
+              value = var.tags.Stage
+            }
           }
-          ENV = {
-            type  = "PLAINTEXT"
-            value = var.tags.Stage
-          }
-        }
-      )
-
+        )
+      }
     }
-  }
+  )
 
-  review_configs = {
-    for config in lookup(var.configs, "service_configs", []) : config.service_name => {
-      name = "${config.review_build_name}"
-      environment_variables = merge(
-        {
-          for variable_name, variable_config in lookup(config.environment_variables, "review", {}) : variable_name => variable_config
-        },
-        {
-          PROJECT = {
-            type  = "PLAINTEXT"
-            value = config.service_name
+  review_configs = merge(
+    {
+      for config in lookup(var.configs, "service_pipeline_configs", []) : config.service_name => {
+        name = "${config.review_build_name}"
+        environment_variables = merge(
+          {
+            for variable_name, variable_config in lookup(config.environment_variables, "review", {}) : variable_name => variable_config
+          },
+          {
+            PROJECT = {
+              type  = "PLAINTEXT"
+              value = config.service_name
+            }
+            ENV = {
+              type  = "PLAINTEXT"
+              value = var.tags.Stage
+            }
           }
-          ENV = {
-            type  = "PLAINTEXT"
-            value = var.tags.Stage
+        )
+
+      }
+    },
+    {
+      for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
+        name = "${config.review_build_name}"
+        environment_variables = merge(
+          {
+            for variable_name, variable_config in lookup(config.environment_variables, "review", {}) : variable_name => variable_config
+          },
+          {
+            PROJECT = {
+              type  = "PLAINTEXT"
+              value = config.bucket_name
+            }
+            ENV = {
+              type  = "PLAINTEXT"
+              value = var.tags.Stage
+            }
           }
-        }
-      )
+        )
 
+      }
     }
-  }
+  )
 
-  pipeline_configs = {
-    for config in lookup(var.configs, "service_configs", []) : config.service_name => {
-      name        = "${config.pipeline_name}"
-      repo_name   = "${config.repo_name}"
-      repo_id     = var.configs.repo_configs[config.repo_name].id
-      repo_branch = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
+  pipeline_configs = merge(
+    {
+      for config in lookup(var.configs, "service_pipeline_configs", []) : config.service_name => {
+        name        = "${config.pipeline_name}"
+        repo_name   = "${config.repo_name}"
+        repo_id     = var.configs.repo_configs[config.repo_name].id
+        repo_branch = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
+        build       = try(config.build, true)
+        deploy      = try(config.deploy, true)
+        review      = try(config.review, true)
+      }
+    },
+    {
+      for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
+        name        = "${config.pipeline_name}"
+        repo_name   = "${config.repo_name}"
+        repo_id     = var.configs.repo_configs[config.repo_name].id
+        repo_branch = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
+        build       = try(config.build, true)
+        deploy      = try(config.deploy, false)
+        review      = try(config.review, true)
+      }
     }
-  }
+  )
 
   current_account_id = data.aws_caller_identity.current.account_id
 }
@@ -94,13 +146,6 @@ resource "aws_ecr_repository" "pipeline" {
 
   tags = merge(var.tags, { Name : "${each.key}" })
 }
-# resource "aws_s3_bucket" "pipeline" {
-#   for_each = local.pipeline_configs
-
-#   bucket = "${each.key}-${local.current_account_id}"
-
-#   tags = merge(var.tags, { Name : "${each.key}-${local.current_account_id}" })
-# }
 
 resource "aws_iam_policy" "ci" {
   for_each    = local.ci_configs
@@ -757,62 +802,141 @@ resource "aws_codepipeline" "pipeline" {
       version   = "1"
     }
   }
-  stage {
-    name = "Build"
 
-    action {
-      category = "Build"
-      configuration = {
-        "ProjectName" = aws_codebuild_project.ci[each.key].name
+  dynamic "stage" {
+    for_each = each.value.build ? {
+      build = each.value.build
+    } : {}
+
+    content {
+      name = !each.value.deploy && each.value.review ? "Build-and-Review" : "Build"
+
+      action {
+        category = "Build"
+        configuration = {
+          "ProjectName" = aws_codebuild_project.ci[each.key].name
+        }
+        input_artifacts = [
+          "${each.value.name}-src",
+        ]
+        name = "Build"
+        output_artifacts = [
+          "${each.value.name}-build",
+        ]
+        owner     = "AWS"
+        provider  = "CodeBuild"
+        region    = var.region
+        run_order = 1
+        version   = "1"
       }
-      input_artifacts = [
-        "${each.value.name}-src",
-      ]
-      name = "Build"
-      output_artifacts = [
-        "${each.value.name}-build",
-      ]
-      owner     = "AWS"
-      provider  = "CodeBuild"
-      region    = var.region
-      run_order = 1
-      version   = "1"
+
+      dynamic "action" {
+        for_each = !each.value.deploy && each.value.review ? {
+          review = each.value.review
+        } : {}
+
+        content {
+          category = "Build"
+          configuration = {
+            "ProjectName" = aws_codebuild_project.review[each.key].name
+          }
+          input_artifacts = [
+            "${each.value.name}-src",
+          ]
+          name             = "Review"
+          output_artifacts = []
+          owner            = "AWS"
+          provider         = "CodeBuild"
+          run_order        = 1
+          version          = "1"
+        }
+      }
     }
   }
-  stage {
-    name = "Deploy-and-Review"
 
-    action {
-      category = "Deploy"
-      configuration = {
-        "ClusterName" = var.configs.cluster_name
-        "FileName"    = "imagedefinitions.json"
-        "ServiceName" = each.key
+  dynamic "stage" {
+    for_each = each.value.deploy ? {
+      deploy = each.value.deploy
+    } : {}
+
+    content {
+      name = each.value.review ? "Deploy-and-Review" : "Deploy"
+
+      action {
+        category = "Deploy"
+        configuration = {
+          "ClusterName" = var.configs.cluster_name
+          "FileName"    = "imagedefinitions.json"
+          "ServiceName" = each.key
+        }
+        input_artifacts = [
+          "${each.value.name}-build",
+        ]
+        name             = "Deploy"
+        output_artifacts = []
+        owner            = "AWS"
+        provider         = "ECS"
+        run_order        = 1
+        version          = "1"
       }
-      input_artifacts = [
-        "${each.value.name}-build",
-      ]
-      name             = "Deploy"
-      output_artifacts = []
-      owner            = "AWS"
-      provider         = "ECS"
-      run_order        = 1
-      version          = "1"
-    }
-    action {
-      category = "Build"
-      configuration = {
-        "ProjectName" = aws_codebuild_project.review[each.key].name
+
+      dynamic "action" {
+        for_each = each.value.review ? {
+          review = each.value.review
+        } : {}
+
+        content {
+          category = "Build"
+          configuration = {
+            "ProjectName" = aws_codebuild_project.review[each.key].name
+          }
+          input_artifacts = [
+            "${each.value.name}-src",
+          ]
+          name             = "Review"
+          output_artifacts = []
+          owner            = "AWS"
+          provider         = "CodeBuild"
+          run_order        = 1
+          version          = "1"
+        }
       }
-      input_artifacts = [
-        "${each.value.name}-src",
-      ]
-      name             = "Review"
-      output_artifacts = []
-      owner            = "AWS"
-      provider         = "CodeBuild"
-      run_order        = 1
-      version          = "1"
     }
   }
+  # stage {
+  #   name = "Deploy-and-Review"
+
+  #   action {
+  #     category = "Deploy"
+  #     configuration = {
+  #       "ClusterName" = var.configs.cluster_name
+  #       "FileName"    = "imagedefinitions.json"
+  #       "ServiceName" = each.key
+  #     }
+  #     input_artifacts = [
+  #       "${each.value.name}-build",
+  #     ]
+  #     name             = "Deploy"
+  #     output_artifacts = []
+  #     owner            = "AWS"
+  #     provider         = "ECS"
+  #     run_order        = 1
+  #     version          = "1"
+  #   }
+  #   action {
+  #     category = "Build"
+  #     configuration = {
+  #       "ProjectName" = aws_codebuild_project.review[each.key].name
+  #     }
+  #     input_artifacts = [
+  #       "${each.value.name}-src",
+  #     ]
+  #     name             = "Review"
+  #     output_artifacts = []
+  #     owner            = "AWS"
+  #     provider         = "CodeBuild"
+  #     run_order        = 1
+  #     version          = "1"
+  #   }
+  # }
 }

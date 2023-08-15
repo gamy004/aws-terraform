@@ -8,7 +8,7 @@ locals {
   api_configs = flatten([
     for environment in var.environments : [
       for application in var.applications : {
-        host_header_name  = "${environment}-api-${application}.${var.domain_name}"
+        host_header_name  = "${try(var.backend_configs["${application}-${environment}"].sub_domain_name, "${environment}-api-${application}")}.${var.domain_name}"
         api_gateway_name  = "${application}-api-gw-${environment}"
         target_group_name = "${application}-ecs-tg-${environment}"
         tags = {
@@ -22,9 +22,9 @@ locals {
   web_configs = flatten([
     for environment in var.environments : [
       for application in var.applications : {
-        host_header_name = "${environment}-web-${application}.${var.domain_name}"
+        host_header_name = "${try(var.frontend_configs["${application}-${environment}"].sub_domain_name, "${environment}-${application}")}.${var.domain_name}"
         cloudfront_name  = "${application}-web-cf-${environment}"
-        bucket_name      = "${application}-web-${environment}"
+        bucket_name      = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in pipeline
         tags = {
           Environment = environment
           Application = application
@@ -40,16 +40,38 @@ locals {
     }
   }
 
-  service_configs = flatten([
+  service_ecs_configs = flatten([
     for environment in var.environments : [
       for application in var.applications : merge(
         lookup(var.backend_configs, "${application}-${environment}", {}),
         {
-          repo_name         = "${application}-service"
-          service_name      = "${application}-service-${environment}"
+          service_name = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}") # must match with `service_name` in pipeline
+          environment_variables = merge(
+            local.default_environment_variables,
+            try(var.backend_configs["${application}-${environment}"].environment_variables, {}),
+          )
+          tags = {
+            Environment = environment
+            Application = application
+          }
+        }
+      )
+    ]
+  ])
+
+  service_pipeline_configs = flatten([
+    for environment in var.environments : [
+      for application in var.applications : merge(
+        lookup(var.backend_configs, "${application}-${environment}", {}),
+        {
+          repo_name         = try(var.backend_configs["${application}-${environment}"].repo_name, "${application}-service")
+          service_name      = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}") # must match with `service_name` in ecs
           ci_build_name     = "${application}-service-ci-codebuild-${environment}"
           review_build_name = "${application}-service-review-codebuild-${environment}"
           pipeline_name     = "${application}-service-codepipeline-${environment}"
+          build             = try(var.build_configs.pipeline_stages["${application}-service-${environment}"].build, true)
+          deploy            = try(var.build_configs.pipeline_stages["${application}-service-${environment}"].deploy, true)
+          review            = try(var.build_configs.pipeline_stages["${application}-service-${environment}"].review, true)
           environment_variables = {
             build = merge(
               local.default_environment_variables,
@@ -65,9 +87,57 @@ locals {
               lookup(var.build_configs.environment_variables.review, "${application}-service", {}),
               lookup(var.build_configs.environment_variables.review, "${application}-service-${environment}", {}),
             )
-            ecs = merge(
+          }
+          tags = {
+            Environment = environment
+            Application = application
+          }
+        }
+      )
+    ]
+  ])
+
+  web_pipeline_configs = flatten([
+    for environment in var.environments : [
+      for application in var.applications : merge(
+        lookup(var.frontend_configs, "${application}-${environment}", {}),
+        {
+          repo_name         = try(var.frontend_configs["${application}-${environment}"].repo_name, "${application}-web")
+          bucket_name       = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in web_configs
+          ci_build_name     = "${application}-web-ci-codebuild-${environment}"
+          review_build_name = "${application}-web-review-codebuild-${environment}"
+          pipeline_name     = "${application}-web-codepipeline-${environment}"
+          build             = try(var.build_configs.pipeline_stages["${application}-web-${environment}"].build, true)
+          deploy            = try(var.build_configs.pipeline_stages["${application}-web-${environment}"].deploy, false)
+          review            = try(var.build_configs.pipeline_stages["${application}-web-${environment}"].review, true)
+          environment_variables = {
+            build = merge(
               local.default_environment_variables,
-              try(var.backend_configs["${application}-${environment}"].environment_variables, {}),
+              # lookup(var.build_configs.environment_variables, "all", {}),
+              lookup(var.build_configs.environment_variables.build, "all", {}),
+              lookup(var.build_configs.environment_variables.build, "${application}-web", {}),
+              lookup(var.build_configs.environment_variables.build, "${application}-web-${environment}", {}),
+              {
+                CF_ROLE_ARN = {
+                  type  = "PLAINTEXT"
+                  value = "${data.aws_iam_role.cloudfront_invalidation_role.arn}"
+                }
+                DISTRIBUTION_ID = {
+                  type  = "PLAINTEXT"
+                  value = "${module.web_cdn[try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")].cloudfront.cloudfront_distribution_id}"
+                }
+                S3_BUCKET = {
+                  type  = "PLAINTEXT"
+                  value = "${module.web_cdn[try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")].s3.s3_bucket_id}"
+                }
+              }
+            )
+            review = merge(
+              local.default_environment_variables,
+              # lookup(var.build_configs.environment_variables, "all", {}),
+              lookup(var.build_configs.environment_variables.review, "all", {}),
+              lookup(var.build_configs.environment_variables.review, "${application}-web", {}),
+              lookup(var.build_configs.environment_variables.review, "${application}-web-${environment}", {}),
             )
           }
           tags = {
@@ -223,6 +293,7 @@ data "aws_subnets" "public_subnets" {
     name   = "vpc-id"
     values = [data.aws_vpc.workload_vpc.id]
   }
+
 
   filter {
     name   = "tag:Name"
@@ -386,7 +457,7 @@ module "service" {
     subnet_ids         = data.aws_subnets.private_subnets.ids
     security_group_ids = [module.security_groups.app_sg.id]
     target_group_arns  = module.internal_lb.private_alb.target_group_arns
-    service_configs    = local.service_configs
+    service_configs    = local.service_ecs_configs
   }
   tags = local.tags
 }
@@ -409,7 +480,8 @@ module "pipeline" {
     s3_artifact_bucket_name           = "${var.project_name}-artifacts"
     review_subnet_ids                 = [data.aws_subnet.review.id]
     review_security_group_ids         = [data.aws_security_group.review.id]
-    service_configs                   = local.service_configs
+    service_pipeline_configs          = local.service_pipeline_configs
+    web_pipeline_configs              = local.web_pipeline_configs
     repo_configs                      = try(var.repo_configs, {})
   }
   tags = local.tags
