@@ -16,7 +16,11 @@ resource "aws_cognito_user_pool" "pool" {
     minimum_length = try(var.configs.password_minimum_length, 6)
   }
 
-  username_attributes = try(var.configs.username_attributes, ["email"])
+  auto_verified_attributes = try(var.configs.required_user_attributes, ["email"])
+  username_attributes      = try(var.configs.username_attributes, ["email"])
+  user_attribute_update_settings = {
+    attributes_require_verification_before_update = try(var.configs.required_user_attributes, ["email"])
+  }
   #   dynamic "user_attribute_update_settings" {
   #     for_each = length(var.configs.required_user_attributes) > 0 ? [var.configs.required_user_attributes] : []
 
