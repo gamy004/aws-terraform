@@ -11,13 +11,19 @@
 variable "configs" {
   description = "Value of the configurations for the authentication"
   type = object({
-    user_pool_name = string
+    user_pool_name           = string
+    password_minimum_length  = number
+    username_attributes      = list(string)
+    required_user_attributes = list(string)
     tags = object({
       Environment = string
     })
   })
   default = {
-    user_pool_name = "<project>-user-pool-<environment>"
+    user_pool_name           = "<project>-user-pool-<environment>"
+    password_minimum_length  = 6
+    username_attributes      = ["email"]
+    required_user_attributes = ["email"]
     tags = {
       Environment = "<environment>"
     }

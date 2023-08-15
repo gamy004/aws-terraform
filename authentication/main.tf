@@ -13,8 +13,19 @@ resource "aws_cognito_user_pool" "pool" {
   }
 
   password_policy {
-    minimum_length = 6
+    minimum_length = try(var.configs.password_minimum_length, 6)
   }
+
+  username_attributes = try(var.configs.username_attributes, ["email"])
+  #   dynamic "user_attribute_update_settings" {
+  #     for_each = length(var.configs.required_user_attributes) > 0 ? [var.configs.required_user_attributes] : []
+
+  #     content {
+  #       attributes_require_verification_before_update = [
+  #         for attr in each.value : attr
+  #       ]
+  #     }
+  #   }
 
   tags = merge(var.tags, { Name : var.configs.user_pool_name })
 }

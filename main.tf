@@ -650,7 +650,9 @@ module "authentication" {
   source = "./authentication"
 
   configs = {
-    user_pool_name = "${each.value.user_pool_name}"
-    tags           = each.value.tags
+    user_pool_name           = "${each.value.user_pool_name}"
+    username_attributes      = ["email"]
+    required_user_attributes = ["email"]
+    tags                     = each.value.tags
   }
 }
