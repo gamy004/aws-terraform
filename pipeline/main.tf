@@ -903,40 +903,4 @@ resource "aws_codepipeline" "pipeline" {
       }
     }
   }
-  # stage {
-  #   name = "Deploy-and-Review"
-
-  #   action {
-  #     category = "Deploy"
-  #     configuration = {
-  #       "ClusterName" = var.configs.cluster_name
-  #       "FileName"    = "imagedefinitions.json"
-  #       "ServiceName" = each.key
-  #     }
-  #     input_artifacts = [
-  #       "${each.value.name}-build",
-  #     ]
-  #     name             = "Deploy"
-  #     output_artifacts = []
-  #     owner            = "AWS"
-  #     provider         = "ECS"
-  #     run_order        = 1
-  #     version          = "1"
-  #   }
-  #   action {
-  #     category = "Build"
-  #     configuration = {
-  #       "ProjectName" = aws_codebuild_project.review[each.key].name
-  #     }
-  #     input_artifacts = [
-  #       "${each.value.name}-src",
-  #     ]
-  #     name             = "Review"
-  #     output_artifacts = []
-  #     owner            = "AWS"
-  #     provider         = "CodeBuild"
-  #     run_order        = 1
-  #     version          = "1"
-  #   }
-  # }
 }

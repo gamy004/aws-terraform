@@ -3,12 +3,6 @@ locals {
   origin_id = "${var.configs.bucket_name}_oac"
 }
 
-# module "s3_web" {
-#   source        = "terraform-aws-modules/s3-bucket/aws"
-#   bucket        = var.configs.bucket_name
-#   force_destroy = true
-# }
-
 module "cf" {
   source = "terraform-aws-modules/cloudfront/aws"
 
@@ -35,15 +29,8 @@ module "cf" {
     }
   }
 
-  # create_origin_access_identity = true
-
-  # origin_access_identities = {
-  #   s3_bucket_one = "My awesome CloudFront can access"
-  # }
-
   origin = {
     "${local.origin_id}" = {
-      # domain_name           = module.s3_web.s3_bucket_bucket_regional_domain_name
       domain_name           = var.configs.bucket_domain_name
       origin_access_control = "${local.origin_id}"
     }

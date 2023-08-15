@@ -1,7 +1,3 @@
-# data "aws_rds_engine_version" "postgresql" {
-#   engine  = "aurora-postgresql"
-#   version = "15.3"
-# }
 locals {
   aurora_dbs = {
     for k, v in var.configs : k => v if length(regexall("aurora-*", v.engine)) > 0

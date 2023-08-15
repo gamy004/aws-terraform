@@ -18,31 +18,8 @@ module "external_alb" {
       certificate_arn    = var.certificate_arn
       action_type        = "forward"
       target_group_index = 0
-      # action_type     = "fixed-response"
-      # fixed_response = {
-      #   content_type = "text/plain"
-      #   status_code  = 404
-      # }
     }
   ]
-
-  # https_listener_rules = [
-  #   {
-  #     https_listener_index = 0
-  #     priority             = 1
-
-  #     actions = [
-  #       {
-  #         type               = "forward"
-  #         target_group_index = 0
-  #       }
-  #     ]
-
-  #     conditions = [{
-  #       host_headers = [var.configs.api_domain]
-  #     }]
-  #   }
-  # ]
 
   target_groups = [
     {
