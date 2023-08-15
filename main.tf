@@ -24,7 +24,7 @@ locals {
       for application in var.applications : {
         host_header_name = "${try(var.frontend_configs["${application}-${environment}"].sub_domain_name, "${environment}-${application}")}.${var.domain_name}"
         cloudfront_name  = "${application}-web-cf-${environment}"
-        bucket_name      = "${try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")}-${var.workload_account_id}" # must match with `bucket_name` in pipeline
+        bucket_name      = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in pipeline
         tags = {
           Environment = environment
           Application = application
@@ -103,7 +103,7 @@ locals {
         lookup(var.frontend_configs, "${application}-${environment}", {}),
         {
           repo_name         = try(var.frontend_configs["${application}-${environment}"].repo_name, "${application}-web")
-          bucket_name       = "${try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")}-${var.workload_account_id}" # must match with `bucket_name` in web_configs
+          bucket_name       = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in web_configs
           ci_build_name     = "${application}-web-ci-codebuild-${environment}"
           review_build_name = "${application}-web-review-codebuild-${environment}"
           pipeline_name     = "${application}-web-codepipeline-${environment}"
@@ -124,11 +124,11 @@ locals {
                 }
                 DISTRIBUTION_ID = {
                   type  = "PLAINTEXT"
-                  value = "${module.web_cdn["${try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")}-${var.workload_account_id}"].cloudfront.cloudfront_distribution_id}"
+                  value = "${module.web_cdn[try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")].cloudfront.cloudfront_distribution_id}"
                 }
                 S3_BUCKET = {
                   type  = "PLAINTEXT"
-                  value = "${module.s3_web["${try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")}-${var.workload_account_id}"].s3_bucket_id}"
+                  value = "${module.s3_web[try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")].s3_bucket_id}"
                 }
               }
             )
