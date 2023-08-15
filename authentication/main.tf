@@ -69,7 +69,7 @@ resource "aws_cognito_user_pool" "this" {
     required                 = false
     string_attribute_constraints {
       min_length = 1
-      max_length = 256
+      max_length = 2048
     }
   }
 
@@ -81,7 +81,7 @@ resource "aws_cognito_user_pool" "this" {
     required                 = false
     string_attribute_constraints {
       min_length = 1
-      max_length = 256
+      max_length = 2048
     }
   }
   #   dynamic "user_attribute_update_settings" {
