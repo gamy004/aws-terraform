@@ -148,6 +148,15 @@ locals {
       )
     ]
   ])
+
+  authentication_configs = {
+    for environment in var.environments : environment => {
+      user_pool_name = "${var.project_name}-user-pool-${environment}"
+      tags = {
+        Environment = environment
+      }
+    }
+  }
 }
 
 provider "aws" {
@@ -629,4 +638,19 @@ module "web_cdn" {
   }
 
   tags = local.tags
+}
+
+module "authentication" {
+  for_each = local.authentication_configs
+
+  providers = {
+    aws = aws.workload_infra_role
+  }
+
+  source = "./authentication"
+
+  configs = {
+    user_pool_name = "${each.value.user_pool_name}"
+    tags           = each.value.tags
+  }
 }
