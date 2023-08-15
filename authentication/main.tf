@@ -18,9 +18,17 @@ resource "aws_cognito_user_pool" "this" {
 
   username_attributes      = try(var.configs.username_attributes, ["email"])
   auto_verified_attributes = try(var.configs.required_user_attributes, ["email"])
-  user_attribute_update_settings {
-    attributes_require_verification_before_update = try(var.configs.required_user_attributes, ["email"])
+
+  dynamic "user_attribute_update_settings" {
+    for_each = length(var.configs.required_user_attributes) > 0 ? [var.configs.required_user_attributes] : []
+
+    content {
+      attributes_require_verification_before_update = each.value
+    }
   }
+  # user_attribute_update_settings {
+  #   attributes_require_verification_before_update = try(var.configs.required_user_attributes, ["email"])
+  # }
 
   schema {
     attribute_data_type      = "String"
@@ -84,15 +92,6 @@ resource "aws_cognito_user_pool" "this" {
       max_length = 2048
     }
   }
-  #   dynamic "user_attribute_update_settings" {
-  #     for_each = length(var.configs.required_user_attributes) > 0 ? [var.configs.required_user_attributes] : []
-
-  #     content {
-  #       attributes_require_verification_before_update = [
-  #         for attr in each.value : attr
-  #       ]
-  #     }
-  #   }
 
   tags = merge(var.tags, { Name : var.configs.user_pool_name })
 }
@@ -107,5 +106,4 @@ resource "aws_cognito_user_pool_client" "client" {
   generate_secret               = each.value.generate_secret
   refresh_token_validity        = each.value.refresh_token_validity
   explicit_auth_flows           = each.value.explicit_auth_flows
-
 }

@@ -678,8 +678,10 @@ module "authentication" {
     user_pool_name           = "${each.value.user_pool_name}"
     password_minimum_length  = 6
     username_attributes      = ["email"]
-    required_user_attributes = ["email"]
+    required_user_attributes = []
     clients                  = each.value.clients
-    tags                     = merge(local.tags, each.value.tags)
+    tags                     = each.value.tags
   }
+
+  tags = local.tags
 }
