@@ -3,10 +3,10 @@
 #   type        = string
 # }
 
-variable "vpc_id" {
-  description = "Value of the vpc id for the api gateway"
-  type        = string
-}
+# variable "vpc_id" {
+#   description = "Value of the vpc id for the api gateway"
+#   type        = string
+# }
 
 # variable "domain_name" {
 #   description = "Value of the domain name associated with the api gateway"
@@ -21,19 +21,16 @@ variable "certificate_arn" {
 variable "configs" {
   description = "Value of the configurations for the api gateway"
   type = object({
-    cf_name                  = string
-    waf_name                 = string
-    waf_ip_set_outbound_name = string
+    cf_name     = string
+    web_acl_arn = string
 
-    associate_domains   = list(string)
-    default_origin      = any
-    non_default_origins = any
+    associate_domains = list(string)
+    default_origin    = any
   })
   default = {
-    cf_name                  = "<project>-cf-<stage>"
-    waf_name                 = "<project>-waf-<stage>"
-    waf_ip_set_outbound_name = "<project>-outbound-ip-set"
-    associate_domains        = ["a.example.com", "b.example.com"]
+    cf_name           = "<project>-cf-<stage>"
+    web_acl_arn       = ""
+    associate_domains = ["a.example.com", "b.example.com"]
     default_origin = {
       name   = "origin-domain"
       domain = "a.example.com"
@@ -47,15 +44,6 @@ variable "configs" {
           "SSLv3",
           "TLSv1",
         ]
-      }
-    }
-    non_default_origins = {
-      b = {
-        name   = "origin-domain"
-        domain = "b.example.com"
-        s3_origin_config = {
-          origin_access_identity = "b-access-identity"
-        }
       }
     }
   }

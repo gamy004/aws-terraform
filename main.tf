@@ -19,6 +19,20 @@ locals {
     ]
   ])
 
+  web_configs = flatten([
+    for environment in var.environments : [
+      for application in var.applications : {
+        host_header_name = "${environment}-web-${application}.${var.domain_name}"
+        cloudfront_name  = "${application}-web-cf-${environment}"
+        bucket_name      = "${application}-web-${environment}"
+        tags = {
+          Environment = environment
+          Application = application
+        }
+      }
+    ]
+  ])
+
   default_environment_variables = {
     AWS_DEFAULT_REGION = {
       type  = "PLAINTEXT"
@@ -401,19 +415,31 @@ module "pipeline" {
   tags = local.tags
 }
 
-module "cdn" {
-  source = "./cdn"
+module "waf" {
+  source = "./waf"
 
   providers = {
     aws = aws.network_infra_role_for_cloudfront
   }
 
-  vpc_id          = data.aws_vpc.network_vpc.id
+  configs = {
+    backend_waf_name         = "${var.project_name}-api-waf-${var.stage}"
+    frontend_waf_name        = "${var.project_name}-web-waf-${var.stage}"
+    waf_ip_set_outbound_name = "kmutt-nat-outbound-ip-set"
+  }
+}
+
+module "api_cdn" {
+  source = "./backend-cdn"
+
+  providers = {
+    aws = aws.network_infra_role_for_cloudfront
+  }
+
   certificate_arn = data.aws_acm_certificate.cloudfront_certificate.arn
   configs = {
-    cf_name                  = "${var.project_name}-api-cf-${var.stage}"
-    waf_name                 = "${var.project_name}-api-waf-${var.stage}"
-    waf_ip_set_outbound_name = "kmutt-nat-outbound-ip-set"
+    cf_name     = "${var.project_name}-api-cf-${var.stage}"
+    web_acl_arn = module.waf.backend.arn
     associate_domains = [
       for api_config in local.api_configs : api_config.host_header_name
     ]
@@ -449,7 +475,29 @@ module "cdn" {
         cookies_forward         = "all"
       }
     }
-    non_default_origins = {}
+  }
+
+  tags = local.tags
+}
+
+module "web_cdn" {
+  for_each = {
+    for web_config in local.web_configs : "${web_config.bucket_name}" => web_config
+  }
+
+  source = "./frontend-cdn"
+
+  providers = {
+    aws = aws.network_infra_role_for_cloudfront
+  }
+
+  certificate_arn = data.aws_acm_certificate.cloudfront_certificate.arn
+  configs = {
+    cf_name           = "${each.value.cloudfront_name}"
+    web_acl_arn       = module.waf.frontend.arn
+    associate_domains = [each.value.host_header_name]
+    root_object       = try(each.value.root_object, "index.html")
+    bucket_name       = each.value.bucket_name
   }
 
   tags = local.tags
