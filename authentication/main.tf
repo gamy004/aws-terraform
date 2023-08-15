@@ -18,7 +18,7 @@ resource "aws_cognito_user_pool" "pool" {
 
   auto_verified_attributes = try(var.configs.required_user_attributes, ["email"])
   username_attributes      = try(var.configs.username_attributes, ["email"])
-  user_attribute_update_settings = {
+  user_attribute_update_settings {
     attributes_require_verification_before_update = try(var.configs.required_user_attributes, ["email"])
   }
   #   dynamic "user_attribute_update_settings" {
