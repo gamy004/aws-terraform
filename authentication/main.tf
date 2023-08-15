@@ -67,6 +67,10 @@ resource "aws_cognito_user_pool" "this" {
     mutable                  = true
     name                     = "profile"
     required                 = false
+    string_attribute_constraints {
+      min_length = 1
+      max_length = 256
+    }
   }
 
   schema {
@@ -75,6 +79,10 @@ resource "aws_cognito_user_pool" "this" {
     mutable                  = true
     name                     = "picture"
     required                 = false
+    string_attribute_constraints {
+      min_length = 1
+      max_length = 256
+    }
   }
   #   dynamic "user_attribute_update_settings" {
   #     for_each = length(var.configs.required_user_attributes) > 0 ? [var.configs.required_user_attributes] : []
