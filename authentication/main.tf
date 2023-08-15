@@ -1,4 +1,4 @@
-resource "aws_cognito_user_pool" "pool" {
+resource "aws_cognito_user_pool" "this" {
   name = var.configs.user_pool_name
 
   admin_create_user_config {
@@ -34,6 +34,48 @@ resource "aws_cognito_user_pool" "pool" {
       max_length = 256
     }
   }
+
+  schema {
+    attribute_data_type      = "String"
+    developer_only_attribute = false
+    mutable                  = true
+    name                     = "family_name"
+    required                 = true
+
+    string_attribute_constraints {
+      min_length = 1
+      max_length = 256
+    }
+  }
+
+  schema {
+    attribute_data_type      = "String"
+    developer_only_attribute = false
+    mutable                  = true
+    name                     = "given_name"
+    required                 = true
+
+    string_attribute_constraints {
+      min_length = 1
+      max_length = 256
+    }
+  }
+
+  schema {
+    attribute_data_type      = "String"
+    developer_only_attribute = false
+    mutable                  = true
+    name                     = "profile"
+    required                 = false
+  }
+
+  schema {
+    attribute_data_type      = "String"
+    developer_only_attribute = false
+    mutable                  = true
+    name                     = "picture"
+    required                 = false
+  }
   #   dynamic "user_attribute_update_settings" {
   #     for_each = length(var.configs.required_user_attributes) > 0 ? [var.configs.required_user_attributes] : []
 
@@ -45,4 +87,17 @@ resource "aws_cognito_user_pool" "pool" {
   #   }
 
   tags = merge(var.tags, { Name : var.configs.user_pool_name })
+}
+
+resource "aws_cognito_user_pool_client" "client" {
+  for_each = var.configs.clients
+
+  name = "${each.key}-client"
+
+  prevent_user_existence_errors = "ENABLED"
+  user_pool_id                  = aws_cognito_user_pool.this.id
+  generate_secret               = each.value.generate_secret
+  refresh_token_validity        = each.value.refresh_token_validity
+  explicit_auth_flows           = each.value.explicit_auth_flows
+
 }

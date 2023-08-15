@@ -8,6 +8,7 @@ locals {
   api_configs = flatten([
     for environment in var.environments : [
       for application in var.applications : {
+        service_name      = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}")
         host_header_name  = "${try(var.backend_configs["${application}-${environment}"].sub_domain_name, "${environment}-api-${application}")}.${var.domain_name}"
         api_gateway_name  = "${application}-api-gw-${environment}"
         target_group_name = "${application}-ecs-tg-${environment}"
@@ -152,6 +153,30 @@ locals {
   authentication_configs = {
     for environment in var.environments : environment => {
       user_pool_name = "${var.project_name}-user-pool-${environment}"
+      clients = merge(
+        {
+          for application in var.applications : "${try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}")}" => {
+            refresh_token_validity = 90
+            generate_secret        = true
+            explicit_auth_flows = [
+              "ALLOW_REFRESH_TOKEN_AUTH",
+              "ALLOW_USER_PASSWORD_AUTH",
+              "ALLOW_ADMIN_USER_PASSWORD_AUTH"
+            ]
+          }
+        },
+        {
+          for application in var.applications : "${try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")}" => {
+            refresh_token_validity = 90
+            generate_secret        = false
+            explicit_auth_flows = [
+              "ALLOW_REFRESH_TOKEN_AUTH",
+              "ALLOW_USER_PASSWORD_AUTH"
+            ]
+          }
+        },
+
+      )
       tags = {
         Environment = environment
       }
@@ -654,6 +679,7 @@ module "authentication" {
     password_minimum_length  = 6
     username_attributes      = ["email"]
     required_user_attributes = ["email"]
-    tags                     = each.value.tags
+    clients                  = each.value.clients
+    tags                     = merge(local.tags, each.value.tags)
   }
 }

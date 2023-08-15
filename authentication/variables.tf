@@ -15,6 +15,11 @@ variable "configs" {
     password_minimum_length  = number
     username_attributes      = list(string)
     required_user_attributes = list(string)
+    clients = map(object({
+      refresh_token_validity = number
+      generate_secret        = bool
+      explicit_auth_flows    = list(string)
+    }))
     tags = object({
       Environment = string
     })
@@ -24,6 +29,25 @@ variable "configs" {
     password_minimum_length  = 6
     username_attributes      = ["email"]
     required_user_attributes = ["email"]
+    clients = {
+      "<application>-service-<environment>" = {
+        refresh_token_validity = 90
+        generate_secret        = true
+        explicit_auth_flows = [
+          "ALLOW_REFRESH_TOKEN_AUTH",
+          "ALLOW_USER_PASSWORD_AUTH",
+          "ALLOW_ADMIN_USER_PASSWORD_AUTH"
+        ]
+      }
+      "<application>-web-<environment>" = {
+        refresh_token_validity = 90
+        generate_secret        = false
+        explicit_auth_flows = [
+          "ALLOW_REFRESH_TOKEN_AUTH",
+          "ALLOW_USER_PASSWORD_AUTH"
+        ]
+      }
+    }
     tags = {
       Environment = "<environment>"
     }
