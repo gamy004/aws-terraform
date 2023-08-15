@@ -564,26 +564,47 @@ module "s3_web" {
   source        = "terraform-aws-modules/s3-bucket/aws"
   bucket        = each.key
   force_destroy = true
-  policy = jsonencode({
-    "Version" : "2008-10-17",
-    "Id" : "PolicyForCloudFrontPrivateContent",
-    "Statement" : [
-      {
-        "Sid" : "AllowCloudFrontServicePrincipal",
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "cloudfront.amazonaws.com"
-        },
-        "Action" : "s3:GetObject",
-        "Resource" : "arn:aws:s3:::${web_config.bucket_name}/*",
-        "Condition" : {
-          "StringEquals" : {
-            "AWS:SourceArn" : "${module.web_cdn["${web_config.bucket_name}"].cloudfront.cloudfront_distribution_arn}"
-          }
-        }
-      }
+}
+
+resource "aws_s3_bucket_policy" "allow_access_from_cloudfront" {
+  provider = aws.workload_infra_role
+
+  for_each = {
+    for web_config in local.web_configs : "${web_config.bucket_name}" => web_config
+  }
+
+  bucket = each.value.bucket_name
+  policy = data.aws_iam_policy_document.allow_access_from_cloudfront[each.key].json
+}
+
+data "aws_iam_policy_document" "allow_access_from_cloudfront" {
+  provider = aws.workload_infra_role
+
+  for_each = {
+    for web_config in local.web_configs : "${web_config.bucket_name}" => web_config
+  }
+
+  statement {
+    sid = "PolicyForCloudFrontPrivateContent"
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    actions = [
+      "s3:GetObject"
     ]
-  })
+
+    resources = [
+      "arn:aws:s3:::${each.value.bucket_name}/*"
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values   = ["${module.web_cdn["${each.value.bucket_name}"].cloudfront.cloudfront_distribution_arn}"]
+    }
+  }
 }
 
 module "web_cdn" {
