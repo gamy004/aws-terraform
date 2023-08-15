@@ -26,6 +26,7 @@ variable "configs" {
     root_object       = string
     associate_domains = list(string)
     bucket_name       = string
+    bucket_domain_name = string
   })
   default = {
     cf_name           = "<project>-cf-<stage>"
@@ -33,6 +34,7 @@ variable "configs" {
     root_object       = "index.html"
     associate_domains = ["a.example.com", "b.example.com"]
     bucket_name       = "<application>-web-<environment>"
+    bucket_domain_name = ""
   }
 }
 

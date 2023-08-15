@@ -18,7 +18,7 @@ locals {
             }
             ENV = {
               type  = "PLAINTEXT"
-              value = var.tags.Stage
+              value = config.tags.Environment
             }
           }
         )
@@ -42,7 +42,7 @@ locals {
             }
             ENV = {
               type  = "PLAINTEXT"
-              value = var.tags.Stage
+              value = config.tags.Environment
             }
           }
         )

@@ -128,7 +128,7 @@ locals {
                 }
                 S3_BUCKET = {
                   type  = "PLAINTEXT"
-                  value = "${module.web_cdn[try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")].s3.s3_bucket_id}"
+                  value = "${module.s3_web[try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")].s3_bucket_id}"
                 }
               }
             )
@@ -552,6 +552,20 @@ module "api_cdn" {
   tags = local.tags
 }
 
+module "s3_web" {
+  providers = {
+    aws = aws.workload_infra_role
+  }
+
+  for_each = {
+    for web_config in local.web_configs : "${web_config.bucket_name}" => web_config
+  }
+
+  source        = "terraform-aws-modules/s3-bucket/aws"
+  bucket        = each.key
+  force_destroy = true
+}
+
 module "web_cdn" {
   for_each = {
     for web_config in local.web_configs : "${web_config.bucket_name}" => web_config
@@ -565,11 +579,12 @@ module "web_cdn" {
 
   certificate_arn = data.aws_acm_certificate.cloudfront_certificate.arn
   configs = {
-    cf_name           = "${each.value.cloudfront_name}"
-    web_acl_arn       = module.waf.frontend.arn
-    associate_domains = [each.value.host_header_name]
-    root_object       = try(each.value.root_object, "index.html")
-    bucket_name       = each.value.bucket_name
+    cf_name            = "${each.value.cloudfront_name}"
+    web_acl_arn        = module.waf.frontend.arn
+    associate_domains  = [each.value.host_header_name]
+    root_object        = try(each.value.root_object, "index.html")
+    bucket_name        = each.value.bucket_name
+    bucket_domain_name = module.s3_web[each.value.bucket_name].s3_bucket_bucket_regional_domain_name
   }
 
   tags = local.tags
