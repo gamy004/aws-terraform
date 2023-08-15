@@ -14,6 +14,7 @@ variable "configs" {
     user_pool_name           = string
     password_minimum_length  = number
     username_attributes      = list(string)
+    auto_verified_attributes = list(string)
     required_user_attributes = list(string)
     clients = map(object({
       refresh_token_validity = number
@@ -28,6 +29,7 @@ variable "configs" {
     user_pool_name           = "<project>-user-pool-<environment>"
     password_minimum_length  = 6
     username_attributes      = ["email"]
+    auto_verified_attributes = ["email"]
     required_user_attributes = ["email"]
     clients = {
       "<application>-service-<environment>" = {
