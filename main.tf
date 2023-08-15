@@ -564,6 +564,26 @@ module "s3_web" {
   source        = "terraform-aws-modules/s3-bucket/aws"
   bucket        = each.key
   force_destroy = true
+  policy = jsonencode({
+    "Version" : "2008-10-17",
+    "Id" : "PolicyForCloudFrontPrivateContent",
+    "Statement" : [
+      {
+        "Sid" : "AllowCloudFrontServicePrincipal",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "cloudfront.amazonaws.com"
+        },
+        "Action" : "s3:GetObject",
+        "Resource" : "arn:aws:s3:::${web_config.bucket_name}/*",
+        "Condition" : {
+          "StringEquals" : {
+            "AWS:SourceArn" : "${module.web_cdn["${web_config.bucket_name}"].cloudfront.cloudfront_distribution_arn}"
+          }
+        }
+      }
+    ]
+  })
 }
 
 module "web_cdn" {
