@@ -156,32 +156,51 @@ locals {
     for environment in var.environments : environment => {
       user_pool_name = "${var.project_name}-user-pool-${environment}"
       lambda_configs = try(var.authentication_configs["${environment}"].lambda_configs, {})
-      clients = merge(
-        {
-          for application in var.applications : "${try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}")}" => {
-            refresh_token_validity = 90
-            generate_secret        = true
-            explicit_auth_flows = [
-              "ALLOW_REFRESH_TOKEN_AUTH",
-              "ALLOW_USER_PASSWORD_AUTH",
-              "ALLOW_USER_SRP_AUTH",
-              "ALLOW_ADMIN_USER_PASSWORD_AUTH"
-            ]
+      clients = {
+        for client_name, client_config in try(var.authentication_configs["${environment}"].client_configs, {}) : "${client_name}-${environment}" => {
+          generate_secret        = try(client_config.generate_secret, false)
+          access_token_validity  = try(client_config.access_token_validity.duration, 24)
+          id_token_validity      = try(client_config.id_token_validity.duration, 24)
+          refresh_token_validity = try(client_config.refresh_token_validity.duration, 90)
+          token_validity_units = {
+            access_token  = try(client_config.access_token_validity.unit, "hours")
+            id_token      = try(client_config.id_token_validity.unit, "hours")
+            refresh_token = try(client_config.refresh_token_validity.unit, "days")
           }
-        },
-        {
-          for application in var.applications : "${try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")}" => {
-            refresh_token_validity = 90
-            generate_secret        = false
-            explicit_auth_flows = [
-              "ALLOW_REFRESH_TOKEN_AUTH",
-              "ALLOW_USER_PASSWORD_AUTH",
-              "ALLOW_USER_SRP_AUTH"
-            ]
-          }
-        },
+          explicit_auth_flows = try(client_config.explicit_auth_flows, [
+            "ALLOW_REFRESH_TOKEN_AUTH",
+            "ALLOW_USER_PASSWORD_AUTH",
+            "ALLOW_USER_SRP_AUTH"
+          ])
+        }
+      }
 
-      )
+      # clients = merge(
+      #   {
+      #     for application in var.applications : "${try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}")}" => {
+      #       refresh_token_validity = try(var.authentication_configs["${environment}"].client_configs[],90)
+      #       generate_secret        = true
+      #       explicit_auth_flows = [
+      #         "ALLOW_REFRESH_TOKEN_AUTH",
+      #         "ALLOW_USER_PASSWORD_AUTH",
+      #         "ALLOW_USER_SRP_AUTH",
+      #         "ALLOW_ADMIN_USER_PASSWORD_AUTH"
+      #       ]
+      #     }
+      #   },
+      #   {
+      #     for application in var.applications : "${try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")}" => {
+      #       refresh_token_validity = 90
+      #       generate_secret        = false
+      #       explicit_auth_flows = [
+      #         "ALLOW_REFRESH_TOKEN_AUTH",
+      #         "ALLOW_USER_PASSWORD_AUTH",
+      #         "ALLOW_USER_SRP_AUTH"
+      #       ]
+      #     }
+      #   },
+
+      # )
       tags = {
         Environment = environment
       }

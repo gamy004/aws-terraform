@@ -18,9 +18,16 @@ variable "configs" {
     required_user_attributes = list(string)
     lambda_configs           = any
     clients = map(object({
+      access_token_validity  = number
+      id_token_validity      = number
       refresh_token_validity = number
       generate_secret        = bool
-      explicit_auth_flows    = list(string)
+      token_validity_units = object({
+        access_token  = string
+        id_token      = string
+        refresh_token = string
+      })
+      explicit_auth_flows = list(string)
     }))
     tags = object({
       Environment = string
@@ -37,20 +44,19 @@ variable "configs" {
     }
     clients = {
       "<application>-service-<environment>" = {
+        access_token_validity  = 24
+        id_token_validity      = 24
         refresh_token_validity = 90
         generate_secret        = true
+        token_validity_units = {
+          access_token  = "hours"
+          id_token      = "hours"
+          refresh_token = "days"
+        }
         explicit_auth_flows = [
           "ALLOW_REFRESH_TOKEN_AUTH",
           "ALLOW_USER_PASSWORD_AUTH",
           "ALLOW_ADMIN_USER_PASSWORD_AUTH"
-        ]
-      }
-      "<application>-web-<environment>" = {
-        refresh_token_validity = 90
-        generate_secret        = false
-        explicit_auth_flows = [
-          "ALLOW_REFRESH_TOKEN_AUTH",
-          "ALLOW_USER_PASSWORD_AUTH"
         ]
       }
     }

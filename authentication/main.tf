@@ -113,6 +113,14 @@ resource "aws_cognito_user_pool_client" "client" {
   prevent_user_existence_errors = "ENABLED"
   user_pool_id                  = aws_cognito_user_pool.this.id
   generate_secret               = each.value.generate_secret
+  access_token_validity         = each.value.access_token_validity
+  id_token_validity             = each.value.id_token_validity
   refresh_token_validity        = each.value.refresh_token_validity
   explicit_auth_flows           = each.value.explicit_auth_flows
+
+  token_validity_units {
+    access_token  = each.value.token_validity_units.access_token
+    id_token      = each.value.token_validity_units.id_token
+    refresh_token = each.value.token_validity_units.refresh_token
+  }
 }

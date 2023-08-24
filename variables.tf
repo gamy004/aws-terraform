@@ -122,6 +122,29 @@ variable "authentication_configs" {
       lambda_configs = {
         user_migration_lambda_arn = ""
       }
+      client_configs = {
+        "<application>-service" = {
+          generate_secret = true
+          refresh_token_validity = {
+            duration = 30
+            unit     = "days"
+          }
+          access_token_validity = {
+            duration = 30
+            unit     = "minutes"
+          }
+          id_token_validity = {
+            duration = 1
+            unit     = "hours"
+          }
+          explicit_auth_flows = [
+            "ALLOW_REFRESH_TOKEN_AUTH",
+            "ALLOW_USER_PASSWORD_AUTH",
+            "ALLOW_USER_SRP_AUTH",
+            "ALLOW_ADMIN_USER_PASSWORD_AUTH"
+          ]
+        }
+      }
     }
     uat = {
       lambda_configs = {
@@ -130,4 +153,3 @@ variable "authentication_configs" {
     }
   }
 }
-
