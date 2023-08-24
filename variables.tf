@@ -114,3 +114,20 @@ variable "repo_configs" {
   type    = any
   default = {}
 }
+
+variable "authentication_configs" {
+  type = any
+  default = {
+    dev = {
+      lambda_configs = {
+        user_migration_lambda_arn = ""
+      }
+    }
+    uat = {
+      lambda_configs = {
+        user_migration_lambda_arn = ""
+      }
+    }
+  }
+}
+

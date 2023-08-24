@@ -16,6 +16,7 @@ variable "configs" {
     username_attributes      = list(string)
     auto_verified_attributes = list(string)
     required_user_attributes = list(string)
+    lambda_configs           = any
     clients = map(object({
       refresh_token_validity = number
       generate_secret        = bool
@@ -31,6 +32,9 @@ variable "configs" {
     username_attributes      = ["email"]
     auto_verified_attributes = ["email"]
     required_user_attributes = ["email"]
+    lambda_configs = {
+      user_migration_lambda_arn = ""
+    }
     clients = {
       "<application>-service-<environment>" = {
         refresh_token_validity = 90

@@ -94,6 +94,14 @@ resource "aws_cognito_user_pool" "this" {
     }
   }
 
+  dynamic "lambda_config" {
+    for_each = length(keys(var.configs.lambda_configs)) > 0 ? [var.configs.lambda_configs] : []
+
+    content {
+      user_migration = try(lambda_config.value.user_migration_lambda_arn, null)
+    }
+  }
+
   tags = merge(var.tags, { Name : var.configs.user_pool_name })
 }
 

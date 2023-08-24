@@ -74,7 +74,7 @@ locals {
           pipeline_name     = "${application}-service-codepipeline-${environment}"
           build             = try(var.build_configs.pipeline_stages.build["${application}-service-${environment}"], true)
           deploy            = try(var.build_configs.pipeline_stages.deploy["${application}-service-${environment}"], true)
-          review            = try(var.build_configs.pipeline_stages.review["${application}-service-${environment}"], true)
+          review            = try(var.build_configs.pipeline_stages.review["${application}-service-${environment}"], false)
           environment_variables = {
             build = merge(
               local.default_environment_variables,
@@ -112,7 +112,7 @@ locals {
           pipeline_name     = "${application}-web-codepipeline-${environment}"
           build             = try(var.build_configs.pipeline_stages.build["${application}-web-${environment}"], true)
           deploy            = try(var.build_configs.pipeline_stages.deploy["${application}-web-${environment}"], false)
-          review            = try(var.build_configs.pipeline_stages.review["${application}-web-${environment}"], true)
+          review            = try(var.build_configs.pipeline_stages.review["${application}-web-${environment}"], false)
           environment_variables = {
             build = merge(
               local.default_environment_variables,
@@ -155,6 +155,7 @@ locals {
   authentication_configs = {
     for environment in var.environments : environment => {
       user_pool_name = "${var.project_name}-user-pool-${environment}"
+      lambda_configs = try(var.authentication_configs["${environment}"].lambda_configs, {})
       clients = merge(
         {
           for application in var.applications : "${try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}")}" => {
@@ -340,6 +341,8 @@ data "aws_subnets" "public_subnets" {
 }
 
 data "aws_subnet" "review" {
+  count = local.has_pipeline_review_stage ? 1 : 0
+
   provider = aws.workload_infra_role
   filter {
     name   = "tag:Name"
@@ -348,6 +351,8 @@ data "aws_subnet" "review" {
 }
 
 data "aws_security_group" "review" {
+  count = local.has_pipeline_review_stage ? 1 : 0
+
   provider = aws.workload_infra_role
   filter {
     name   = "tag:Name"
@@ -516,8 +521,8 @@ module "pipeline" {
     s3_access_policy_arn              = data.aws_iam_policy.s3_access.arn
     cloudfront_invalidation_role_arn  = data.aws_iam_role.cloudfront_invalidation_role.arn
     s3_artifact_bucket_name           = "${var.project_name}-artifacts"
-    review_subnet_ids                 = [data.aws_subnet.review.id]
-    review_security_group_ids         = [data.aws_security_group.review.id]
+    review_subnet_ids                 = local.has_pipeline_review_stage ? [for subnet in data.aws_subnet.review : subnet.id] : []
+    review_security_group_ids         = local.has_pipeline_review_stage ? [for security_group in data.aws_security_group.review : security_group.id] : []
     service_pipeline_configs          = local.service_pipeline_configs
     web_pipeline_configs              = local.web_pipeline_configs
     repo_configs                      = try(var.repo_configs, {})
@@ -684,6 +689,7 @@ module "authentication" {
     username_attributes      = ["email"]
     auto_verified_attributes = []
     required_user_attributes = ["email", "family_name", "given_name"]
+    lambda_configs           = each.value.lambda_configs
     clients                  = each.value.clients
     tags                     = each.value.tags
   }
