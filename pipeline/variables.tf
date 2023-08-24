@@ -23,14 +23,18 @@ variable "configs" {
     # security_group_ids = list(string)
     # target_group_arns  = list(string)
     service_pipeline_configs = list(object({
-      repo_name         = string
-      service_name      = string
-      ci_build_name     = string
-      review_build_name = string
-      pipeline_name     = string
-      build             = bool
-      deploy            = bool
-      review            = bool
+      repo_name             = string
+      source_provider       = string
+      source_s3_bucket_name = string
+      source_s3_object_key  = string
+      service_name          = string
+      ci_build_name         = string
+      review_build_name     = string
+      pull_build_name       = string
+      pipeline_name         = string
+      build                 = bool
+      deploy                = bool
+      review                = bool
       environment_variables = object({
         build = map(
           object({
@@ -51,14 +55,18 @@ variable "configs" {
       })
     }))
     web_pipeline_configs = list(object({
-      repo_name         = string
-      bucket_name       = string
-      ci_build_name     = string
-      review_build_name = string
-      pipeline_name     = string
-      build             = bool
-      deploy            = bool
-      review            = bool
+      repo_name             = string
+      source_provider       = string
+      source_s3_bucket_name = string
+      source_s3_object_key  = string
+      bucket_name           = string
+      ci_build_name         = string
+      review_build_name     = string
+      pull_build_name       = string
+      pipeline_name         = string
+      build                 = bool
+      deploy                = bool
+      review                = bool
       environment_variables = object({
         build = map(
           object({
@@ -94,14 +102,18 @@ variable "configs" {
     review_subnet_ids                = []
     review_security_group_ids        = []
     service_pipeline_configs = [{
-      repo_name         = "<application>-service"
-      service_name      = "<application>-service-<environment>"
-      ci_build_name     = "<project>-<application>-service-ci-codebuild-<environment>"
-      review_build_name = "<project>-<application>-service-review-codebuild-<environment>"
-      pipeline_name     = "<project>-<application>-service-codepipeline-<environment>"
-      build             = true
-      deploy            = true
-      review            = true
+      repo_name             = "<application>-service"
+      source_provider       = "CodeStarSourceConnection"
+      source_s3_bucket_name = ""
+      source_s3_object_key  = ""
+      service_name          = "<application>-service-<environment>"
+      ci_build_name         = "<project>-<application>-service-ci-codebuild-<environment>"
+      review_build_name     = "<project>-<application>-service-review-codebuild-<environment>"
+      pull_build_name       = "automationdoc-codebuild-pull-code"
+      pipeline_name         = "<project>-<application>-service-codepipeline-<environment>"
+      build                 = true
+      deploy                = true
+      review                = true
       # s3_bucket_name    = "<application>-<environment>-<account>"
       environment_variables = {
         build = {
@@ -123,14 +135,18 @@ variable "configs" {
       }
     }]
     web_pipeline_configs = [{
-      repo_name         = "<application>-web"
-      bucket_name       = "<application>-web-<environment>"
-      ci_build_name     = "<project>-<application>-web-ci-codebuild-<environment>"
-      review_build_name = "<project>-<application>-web-review-codebuild-<environment>"
-      pipeline_name     = "<project>-<application>-web-codepipeline-<environment>"
-      build             = true
-      deploy            = false
-      review            = true
+      repo_name             = "<application>-web"
+      source_provider       = "S3"
+      source_s3_bucket_name = "automationdoc-ssm-<workload_id>"
+      source_s3_object_key  = "<application>-web-<environment>/<application>-web-<environment>.zip"
+      bucket_name           = "<application>-web-<environment>"
+      ci_build_name         = "<project>-<application>-web-ci-codebuild-<environment>"
+      review_build_name     = "<project>-<application>-web-review-codebuild-<environment>"
+      pull_build_name       = "automationdoc-codebuild-pull-code"
+      pipeline_name         = "<project>-<application>-web-codepipeline-<environment>"
+      build                 = true
+      deploy                = false
+      review                = true
       environment_variables = {
         build = {
           AWS_DEFAULT_REGION = {

@@ -88,7 +88,8 @@ variable "build_configs" {
       build  = any
       review = any
     }),
-    pipeline_stages = any
+    pipeline_stages             = any
+    pull_codebuild_project_name = string
   })
   default = {
     environment_variables = {
@@ -97,6 +98,11 @@ variable "build_configs" {
       review = {}
     }
     pipeline_stages = {
+      source = {
+        "<application>-service-<environment>" = {
+          provider = "CodeStarSourceConnection"
+        }
+      }
       build = {
         "<application>-service-<environment>" = true
       }
@@ -107,6 +113,7 @@ variable "build_configs" {
         "<application>-service-<environment>" = true
       }
     }
+    pull_codebuild_project_name = ""
   }
 }
 
