@@ -172,7 +172,7 @@ resource "aws_security_group" "app_sg" {
       prefix_list_ids  = []
       protocol         = "tcp"
       security_groups = [
-        aws_security_group.public_alb_sg.id
+        aws_security_group.private_alb_sg.id
       ]
       self    = false
       to_port = 80

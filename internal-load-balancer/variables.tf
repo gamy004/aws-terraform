@@ -21,6 +21,7 @@ variable "configs" {
     public_alb_subnet_ids          = list(string)
     private_alb_subnet_ids         = list(string)
     private_nlb_subnet_ids         = list(string)
+    api_gateway_vpc_endpoint_ids   = list(string)
     api_configs = list(object({
       host_header_name  = string
       target_group_name = string
@@ -41,6 +42,7 @@ variable "configs" {
     public_alb_subnet_ids          = []
     private_alb_subnet_ids         = []
     private_nlb_subnet_ids         = []
+    api_gateway_vpc_endpoint_ids   = []
     api_configs = [{
       host_header_name  = "<environment>-api-<application>.<domain>"
       target_group_name = "<application>-<service>-tg.<environment>"

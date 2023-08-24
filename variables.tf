@@ -62,11 +62,94 @@ variable "db_configs" {
 }
 
 variable "sg_configs" {
-  type    = object({})
+  type    = any
   default = {}
 }
 
 variable "lb_configs" {
-  type    = object({})
+  type    = any
   default = {}
+}
+
+variable "backend_configs" {
+  type    = any
+  default = {}
+}
+
+variable "frontend_configs" {
+  type    = any
+  default = {}
+}
+
+variable "build_configs" {
+  type = object({
+    environment_variables = object({
+      # all    = any
+      build  = any
+      review = any
+    }),
+    pipeline_stages = any
+  })
+  default = {
+    environment_variables = {
+      # all    = {}
+      build  = {}
+      review = {}
+    }
+    pipeline_stages = {
+      build = {
+        "<application>-service-<environment>" = true
+      }
+      deploy = {
+        "<application>-service-<environment>" = true
+      }
+      review = {
+        "<application>-service-<environment>" = true
+      }
+    }
+  }
+}
+
+variable "repo_configs" {
+  type    = any
+  default = {}
+}
+
+variable "authentication_configs" {
+  type = any
+  default = {
+    dev = {
+      lambda_configs = {
+        user_migration_lambda_arn = ""
+      }
+      client_configs = {
+        "<application>-service" = {
+          generate_secret = true
+          refresh_token_validity = {
+            duration = 30
+            unit     = "days"
+          }
+          access_token_validity = {
+            duration = 30
+            unit     = "minutes"
+          }
+          id_token_validity = {
+            duration = 1
+            unit     = "hours"
+          }
+          explicit_auth_flows = [
+            "ALLOW_REFRESH_TOKEN_AUTH",
+            "ALLOW_USER_PASSWORD_AUTH",
+            "ALLOW_USER_SRP_AUTH",
+            "ALLOW_ADMIN_USER_PASSWORD_AUTH"
+          ]
+        }
+      }
+    }
+    uat = {
+      lambda_configs = {
+        user_migration_lambda_arn = ""
+      }
+    }
+  }
 }

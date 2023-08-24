@@ -9,3 +9,7 @@ output "private_alb" {
 output "private_nlb" {
   value = module.private_nlb
 }
+
+# output "api_endpoints" {
+#   value = data.aws_network_interface.api_gateway_endpoints
+# }
