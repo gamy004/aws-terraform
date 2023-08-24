@@ -5,6 +5,8 @@ locals {
     Terraform = true
   }
 
+  has_pipeline_review_stage = contains(keys(var.build_configs.pipeline_stages), "review")
+
   api_configs = flatten([
     for environment in var.environments : [
       for application in var.applications : {
@@ -70,9 +72,9 @@ locals {
           ci_build_name     = "${application}-service-ci-codebuild-${environment}"
           review_build_name = "${application}-service-review-codebuild-${environment}"
           pipeline_name     = "${application}-service-codepipeline-${environment}"
-          build             = try(var.build_configs.pipeline_stages["${application}-service-${environment}"].build, true)
-          deploy            = try(var.build_configs.pipeline_stages["${application}-service-${environment}"].deploy, true)
-          review            = try(var.build_configs.pipeline_stages["${application}-service-${environment}"].review, true)
+          build             = try(var.build_configs.pipeline_stages.build["${application}-service-${environment}"], true)
+          deploy            = try(var.build_configs.pipeline_stages.deploy["${application}-service-${environment}"], true)
+          review            = try(var.build_configs.pipeline_stages.review["${application}-service-${environment}"], true)
           environment_variables = {
             build = merge(
               local.default_environment_variables,
@@ -108,9 +110,9 @@ locals {
           ci_build_name     = "${application}-web-ci-codebuild-${environment}"
           review_build_name = "${application}-web-review-codebuild-${environment}"
           pipeline_name     = "${application}-web-codepipeline-${environment}"
-          build             = try(var.build_configs.pipeline_stages["${application}-web-${environment}"].build, true)
-          deploy            = try(var.build_configs.pipeline_stages["${application}-web-${environment}"].deploy, false)
-          review            = try(var.build_configs.pipeline_stages["${application}-web-${environment}"].review, true)
+          build             = try(var.build_configs.pipeline_stages.build["${application}-web-${environment}"], true)
+          deploy            = try(var.build_configs.pipeline_stages.deploy["${application}-web-${environment}"], false)
+          review            = try(var.build_configs.pipeline_stages.review["${application}-web-${environment}"], true)
           environment_variables = {
             build = merge(
               local.default_environment_variables,

@@ -97,10 +97,14 @@ variable "build_configs" {
       review = {}
     }
     pipeline_stages = {
-      "<application>-service-<environment>" = {
-        build  = true
-        deploy = true
-        review = true
+      build = {
+        "<application>-service-<environment>" = true
+      }
+      deploy = {
+        "<application>-service-<environment>" = true
+      }
+      review = {
+        "<application>-service-<environment>" = true
       }
     }
   }
