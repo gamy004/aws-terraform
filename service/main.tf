@@ -63,44 +63,44 @@ data "aws_iam_policy_document" "dynamodb_access" {
   }
 }
 
-resource "aws_iam_user" "service" {
-  for_each = local.iam_users
-  name     = each.value.service_name
-  tags     = merge(var.tags, { Name : "${each.value.service_name}" })
-}
+# resource "aws_iam_user" "service" {
+#   for_each = local.iam_users
+#   name     = each.value.service_name
+#   tags     = merge(var.tags, { Name : "${each.value.service_name}" })
+# }
 
-resource "aws_iam_user_policy_attachment" "cognito_access" {
-  for_each = aws_iam_user.service
+# resource "aws_iam_user_policy_attachment" "cognito_access" {
+#   for_each = aws_iam_user.service
 
-  user       = each.value.name
-  policy_arn = data.aws_iam_policy.cognito_access.arn
-}
+#   user       = each.value.name
+#   policy_arn = data.aws_iam_policy.cognito_access.arn
+# }
 
-resource "aws_iam_user_policy" "dynamodb_access" {
-  for_each = aws_iam_user.service
+# resource "aws_iam_user_policy" "dynamodb_access" {
+#   for_each = aws_iam_user.service
 
-  name   = "${each.value.name}-policy"
-  user   = each.value.name
-  policy = data.aws_iam_policy_document.dynamodb_access.json
-}
+#   name   = "${each.value.name}-policy"
+#   user   = each.value.name
+#   policy = data.aws_iam_policy_document.dynamodb_access.json
+# }
 
-module "ecs" {
-  source       = "terraform-aws-modules/ecs/aws"
-  cluster_name = var.configs.cluster_name
-  cluster_settings = {
-    name  = "containerInsights",
-    value = "enabled"
-  }
-  cluster_configuration = {
-    execute_command_configuration = {
-      logging = "OVERRIDE"
-      log_configuration = {
-        cloud_watch_log_group_name = "/ecs/${var.configs.cluster_name}"
-      }
-    }
-  }
+# module "ecs" {
+#   source       = "terraform-aws-modules/ecs/aws"
+#   cluster_name = var.configs.cluster_name
+#   cluster_settings = {
+#     name  = "containerInsights",
+#     value = "enabled"
+#   }
+#   cluster_configuration = {
+#     execute_command_configuration = {
+#       logging = "OVERRIDE"
+#       log_configuration = {
+#         cloud_watch_log_group_name = "/ecs/${var.configs.cluster_name}"
+#       }
+#     }
+#   }
 
-  services = local.service_definitions
+#   services = local.service_definitions
 
-  tags = merge(var.tags, { Name : var.configs.cluster_name })
-}
+#   tags = merge(var.tags, { Name : var.configs.cluster_name })
+# }

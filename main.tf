@@ -528,25 +528,25 @@ module "database" {
 }
 
 ## ECS
-# module "service" {
-#   source = "./service"
+module "service" {
+  source = "./service"
 
-#   providers = {
-#     aws = aws.workload_infra_role
-#   }
+  providers = {
+    aws = aws.workload_infra_role
+  }
 
-#   region           = var.aws_region
-#   vpc_id           = data.aws_vpc.workload_vpc.id
-#   ecr_repositories = module.pipeline.ecr_repositories
-#   configs = {
-#     cluster_name       = "${var.project_name}-cluster-${var.stage}"
-#     subnet_ids         = data.aws_subnets.private_subnets.ids
-#     security_group_ids = [module.security_groups.app_sg.id]
-#     target_group_arns  = module.internal_lb.private_alb.target_group_arns
-#     service_configs    = local.service_ecs_configs
-#   }
-#   tags = local.tags
-# }
+  region           = var.aws_region
+  vpc_id           = data.aws_vpc.workload_vpc.id
+  ecr_repositories = module.pipeline.ecr_repositories
+  configs = {
+    cluster_name       = "${var.project_name}-cluster-${var.stage}"
+    subnet_ids         = data.aws_subnets.private_subnets.ids
+    security_group_ids = [module.security_groups.app_sg.id]
+    target_group_arns  = module.internal_lb.private_alb.target_group_arns
+    service_configs    = local.service_ecs_configs
+  }
+  tags = local.tags
+}
 
 ## CODE PIPELINE
 module "pipeline" {
