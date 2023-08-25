@@ -2,7 +2,8 @@ locals {
   ci_configs = merge(
     {
       for config in lookup(var.configs, "service_pipeline_configs", []) : config.service_name => {
-        name = "${config.ci_build_name}"
+        name            = "${config.ci_build_name}"
+        pull_build_name = "${config.pull_build_name}"
         environment_variables = merge(
           {
             for variable_name, variable_config in lookup(config.environment_variables, "build", {}) : variable_name => variable_config
@@ -26,7 +27,8 @@ locals {
     },
     {
       for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
-        name = "${config.ci_build_name}"
+        name            = "${config.ci_build_name}"
+        pull_build_name = "${config.pull_build_name}"
         environment_variables = merge(
           {
             for variable_name, variable_config in lookup(config.environment_variables, "build", {}) : variable_name => variable_config
@@ -98,24 +100,34 @@ locals {
   pipeline_configs = merge(
     {
       for config in lookup(var.configs, "service_pipeline_configs", []) : config.service_name => {
-        name        = "${config.pipeline_name}"
-        repo_name   = "${config.repo_name}"
-        repo_id     = var.configs.repo_configs[config.repo_name].id
-        repo_branch = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
-        build       = try(config.build, true)
-        deploy      = try(config.deploy, true)
-        review      = try(config.review, true)
+        name                  = "${config.pipeline_name}"
+        repo_name             = "${config.repo_name}"
+        source_provider       = "${config.source_provider}"
+        source_s3_bucket_name = "${config.source_s3_bucket_name}"
+        source_s3_object_key  = "${config.source_s3_object_key}"
+        pull_build_name       = "${config.pull_build_name}"
+        repo_id               = var.configs.repo_configs[config.repo_name].id
+        repo_branch           = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
+        pull                  = try(config.pull, false)
+        build                 = try(config.build, true)
+        deploy                = try(config.deploy, true)
+        review                = try(config.review, true)
       }
     },
     {
       for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
-        name        = "${config.pipeline_name}"
-        repo_name   = "${config.repo_name}"
-        repo_id     = var.configs.repo_configs[config.repo_name].id
-        repo_branch = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
-        build       = try(config.build, true)
-        deploy      = try(config.deploy, false)
-        review      = try(config.review, true)
+        name                  = "${config.pipeline_name}"
+        repo_name             = "${config.repo_name}"
+        source_provider       = "${config.source_provider}"
+        source_s3_bucket_name = "${config.source_s3_bucket_name}"
+        source_s3_object_key  = "${config.source_s3_object_key}"
+        pull_build_name       = "${config.pull_build_name}"
+        repo_id               = var.configs.repo_configs[config.repo_name].id
+        repo_branch           = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
+        pull                  = try(config.pull, false)
+        build                 = try(config.build, true)
+        deploy                = try(config.deploy, false)
+        review                = try(config.review, true)
       }
     }
   )
@@ -225,6 +237,7 @@ resource "aws_iam_role" "ci" {
   max_session_duration = 3600
   name                 = "${each.value.name}-service-role"
   path                 = "/"
+
   inline_policy {
     name = "allow-assume-role-cloudfront-invalidate-policy"
     policy = jsonencode(
@@ -240,39 +253,136 @@ resource "aws_iam_role" "ci" {
       }
     )
   }
+
+  dynamic "inline_policy" {
+    for_each = local.pipeline_configs[each.key].deploy == true ? [each.value] : []
+
+    content {
+      name = "${inline_policy.value.name}-ecs-codebuild-policy"
+      policy = jsonencode(
+        {
+          Statement = [
+            {
+              Action = [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "ecr:GetAuthorizationToken",
+              ]
+              Effect   = "Allow"
+              Resource = "*"
+            },
+            {
+              Action = [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:GetObjectVersion",
+              ]
+              Effect   = "Allow"
+              Resource = "*"
+            },
+            {
+              Action = [
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:PutImage",
+                "ecr:InitiateLayerUpload",
+                "ecr:UploadLayerPart",
+                "ecr:CompleteLayerUpload",
+              ]
+              Effect   = "Allow"
+              Resource = "*"
+            },
+          ]
+          Version = "2012-10-17"
+        }
+      )
+    }
+  }
+
+  dynamic "inline_policy" {
+    for_each = local.pipeline_configs[each.key].pull == true ? [each.value] : []
+
+    content {
+      name = "${inline_policy.value.pull_build_name}-codebuild-policy"
+      policy = jsonencode(
+        {
+          Statement = [
+            {
+              Action = [
+                "acm:ListCertificates",
+                "apigateway:*",
+                "cloudformation:*",
+                "cloudwatch:*",
+                "codebuild:*",
+                "codecommit:GetBranch",
+                "codecommit:GetCommit",
+                "codecommit:GetRepository",
+                "codecommit:GitPull",
+                "codecommit:GitPush",
+                "codecommit:ListBranches",
+                "codecommit:ListRepositories",
+                "codepipeline:*Execution",
+                "codepipeline:Get*",
+                "codepipeline:List*",
+                "cognito-identity:*",
+                "cognito-idp:*",
+                "cognito-sync:*",
+                "dynamodb:*",
+                "ec2:*NetworkInterface*",
+                "ec2:DescribeDhcpOptions",
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeVpcs",
+                "ecr:*",
+                "eks:Describe*",
+                "events:*",
+                "execute-api:Invoke",
+                "execute-api:ManageConnections",
+                "iam:*",
+                "iot:*",
+                "kinesis:DescribeStream",
+                "kinesis:ListStreams",
+                "kinesis:PutRecord",
+                "kms:ListAliases",
+                "lambda:*",
+                "logs:*",
+                "mobiletargeting:GetApps",
+                "s3:*",
+                "ses:*",
+                "sns:*",
+                "sqs:ListQueues",
+                "sqs:SendMessage",
+                "ssm:*Parameter*",
+                "ssm:AddTagsToResource",
+                "ssm:RemoveTagsFromResource",
+                "tag:GetResources",
+                "xray:PutTelemetryRecords",
+                "xray:PutTraceSegments",
+              ]
+              Effect   = "Allow"
+              Resource = "*"
+            },
+          ]
+          Version = "2012-10-17"
+        }
+      )
+    }
+  }
+
   inline_policy {
-    name = "${each.value.name}-ecs-codebuild-policy"
+    name = "${each.value.name}-ci-codebuild-kms-policy"
     policy = jsonencode(
       {
         Statement = [
           {
             Action = [
-              "logs:CreateLogGroup",
-              "logs:CreateLogStream",
-              "logs:PutLogEvents",
-              "ecr:GetAuthorizationToken",
-            ]
-            Effect   = "Allow"
-            Resource = "*"
-          },
-          {
-            Action = [
-              "s3:GetObject",
-              "s3:PutObject",
-              "s3:GetObjectVersion",
-            ]
-            Effect   = "Allow"
-            Resource = "*"
-          },
-          {
-            Action = [
-              "ecr:GetDownloadUrlForLayer",
-              "ecr:BatchGetImage",
-              "ecr:BatchCheckLayerAvailability",
-              "ecr:PutImage",
-              "ecr:InitiateLayerUpload",
-              "ecr:UploadLayerPart",
-              "ecr:CompleteLayerUpload",
+              "kms:Encrypt",
+              "kms:Decrypt",
+              "kms:ReEncrypt*",
+              "kms:GenerateDataKey*",
+              "kms:DescribeKey",
             ]
             Effect   = "Allow"
             Resource = "*"
@@ -282,6 +392,7 @@ resource "aws_iam_role" "ci" {
       }
     )
   }
+
   tags = merge(var.tags, { Name : "${each.value.name}-service-role" })
 }
 
@@ -784,24 +895,109 @@ resource "aws_codepipeline" "pipeline" {
   stage {
     name = "Source"
 
-    action {
-      category = "Source"
-      configuration = {
-        "BranchName"       = each.value.repo_branch
-        "ConnectionArn"    = aws_codestarconnections_connection.repo[each.value.repo_name].arn
-        "FullRepositoryId" = each.value.repo_id
+    dynamic "action" {
+      for_each = each.value.source_provider == "CodeStarSourceConnection" ? [each.value] : []
+
+      content {
+        category = "Source"
+        configuration = {
+          "BranchName"       = each.value.repo_branch
+          "ConnectionArn"    = aws_codestarconnections_connection.repo[each.value.repo_name].arn
+          "FullRepositoryId" = each.value.repo_id
+        }
+        input_artifacts = []
+        name            = "Source"
+        output_artifacts = [
+          "${each.value.name}-src",
+        ]
+        owner     = "AWS"
+        provider  = "CodeStarSourceConnection"
+        run_order = 1
+        version   = "1"
       }
-      input_artifacts = []
-      name            = "Source"
-      output_artifacts = [
-        "${each.value.name}-src",
-      ]
-      owner     = "AWS"
-      provider  = "CodeStarSourceConnection"
-      run_order = 1
-      version   = "1"
+    }
+
+    dynamic "action" {
+      for_each = each.value.source_provider == "S3" ? [each.value] : []
+
+      content {
+        category = "Source"
+        configuration = {
+          "PollForSourceChanges" = "false"
+          "S3Bucket"             = "${each.value.source_s3_bucket_name}"
+          "S3ObjectKey"          = "${each.value.source_s3_object_key}"
+        }
+        input_artifacts = []
+        name            = "Source"
+        output_artifacts = [
+          "${each.value.name}-src",
+        ]
+        owner     = "AWS"
+        provider  = "S3"
+        region    = var.region
+        run_order = 1
+        version   = "1"
+      }
+    }
+
+  }
+
+  dynamic "stage" {
+    for_each = each.value.source_provider == "S3" ? [each.value] : []
+
+    content {
+      name = "Pull"
+
+      action {
+        category = "Build"
+        configuration = {
+          "EnvironmentVariables" = jsonencode(
+            [
+              {
+                name  = "BRANCH"
+                type  = "PLAINTEXT"
+                value = "main"
+              },
+            ]
+          )
+          "ProjectName" = "${each.value.pull_build_name}"
+        }
+        input_artifacts = [
+          "${each.value.name}-src",
+        ]
+        name = "Pull"
+        output_artifacts = [
+          "${each.value.name}-pull",
+        ]
+        owner     = "AWS"
+        provider  = "S3"
+        region    = var.region
+        run_order = 1
+        version   = "1"
+      }
     }
   }
+  # stage {
+  #   name = "Source"
+
+  #   action {
+  #     category = "Source"
+  #     configuration = {
+  #       "BranchName"       = each.value.repo_branch
+  #       "ConnectionArn"    = aws_codestarconnections_connection.repo[each.value.repo_name].arn
+  #       "FullRepositoryId" = each.value.repo_id
+  #     }
+  #     input_artifacts = []
+  #     name            = "Source"
+  #     output_artifacts = [
+  #       "${each.value.name}-src",
+  #     ]
+  #     owner     = "AWS"
+  #     provider  = "CodeStarSourceConnection"
+  #     run_order = 1
+  #     version   = "1"
+  #   }
+  # }
 
   dynamic "stage" {
     for_each = each.value.build ? {
@@ -817,7 +1013,7 @@ resource "aws_codepipeline" "pipeline" {
           "ProjectName" = aws_codebuild_project.ci[each.key].name
         }
         input_artifacts = [
-          "${each.value.name}-src",
+          "${each.value.name}-${each.value.source_provider == "CodeStarSourceConnection" ? "src" : "pull"}",
         ]
         name = "Build"
         output_artifacts = [

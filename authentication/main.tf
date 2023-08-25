@@ -13,7 +13,8 @@ resource "aws_cognito_user_pool" "this" {
   }
 
   password_policy {
-    minimum_length = try(var.configs.password_minimum_length, 6)
+    minimum_length                   = try(var.configs.password_minimum_length, 6)
+    temporary_password_validity_days = 7
   }
 
   username_attributes      = try(var.configs.username_attributes, ["email"])

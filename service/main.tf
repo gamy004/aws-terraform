@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 locals {
   iam_users = {
     for config in lookup(var.configs, "service_configs", []) : config.service_name => config
@@ -33,7 +35,8 @@ locals {
               value = "${environment_variable.value}"
             }
           ]
-          image = "${var.ecr_repositories[config.service_name].repository_url}:latest"
+          # image = "${var.ecr_repositories[config.service_name].repository_url}:latest"
+          image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${config.service_name}:latest"
           port_mappings = [
             {
               name          = "${config.service_name}-80-tcp"
