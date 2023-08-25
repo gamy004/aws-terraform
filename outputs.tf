@@ -15,9 +15,9 @@
 #   value = var.backend_configs
 # }
 
-# output "service_configs" {
-#   value = local.service_configs
-# }
+output "service_ecs_configs" {
+  value = local.service_ecs_configs
+}
 
 # output "service_definitions" {
 #   value = module.service.service_definitions
