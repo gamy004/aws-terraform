@@ -8,15 +8,15 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "ecr_repositories" {
-  description = "Value of the ecr repositories for the service"
-  type        = any
-  default = {
-    "<application>-service-<environment>" = {
-      repository_url = "aws_account_id.dkr.ecr.region.amazonaws.com/repositoryName"
-    }
-  }
-}
+# variable "ecr_repositories" {
+#   description = "Value of the ecr repositories for the service"
+#   type        = any
+#   default = {
+#     "<application>-service-<environment>" = {
+#       repository_url = "aws_account_id.dkr.ecr.region.amazonaws.com/repositoryName"
+#     }
+#   }
+# }
 
 variable "configs" {
   description = "Value of the configurations for the service"
