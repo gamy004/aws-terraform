@@ -2,7 +2,8 @@ locals {
   ci_configs = merge(
     {
       for config in lookup(var.configs, "service_pipeline_configs", []) : config.service_name => {
-        name = "${config.ci_build_name}"
+        name            = "${config.ci_build_name}"
+        pull_build_name = "${config.pull_build_name}"
         environment_variables = merge(
           {
             for variable_name, variable_config in lookup(config.environment_variables, "build", {}) : variable_name => variable_config
@@ -26,7 +27,8 @@ locals {
     },
     {
       for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
-        name = "${config.ci_build_name}"
+        name            = "${config.ci_build_name}"
+        pull_build_name = "${config.pull_build_name}"
         environment_variables = merge(
           {
             for variable_name, variable_config in lookup(config.environment_variables, "build", {}) : variable_name => variable_config
@@ -103,6 +105,7 @@ locals {
         source_provider = "${config.source_provider}"
         repo_id         = var.configs.repo_configs[config.repo_name].id
         repo_branch     = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
+        pull            = try(config.pull, false)
         build           = try(config.build, true)
         deploy          = try(config.deploy, true)
         review          = try(config.review, true)
@@ -115,6 +118,7 @@ locals {
         source_provider = "${config.source_provider}"
         repo_id         = var.configs.repo_configs[config.repo_name].id
         repo_branch     = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
+        pull            = try(config.pull, false)
         build           = try(config.build, true)
         deploy          = try(config.deploy, false)
         review          = try(config.review, true)
@@ -227,6 +231,7 @@ resource "aws_iam_role" "ci" {
   max_session_duration = 3600
   name                 = "${each.value.name}-service-role"
   path                 = "/"
+
   inline_policy {
     name = "allow-assume-role-cloudfront-invalidate-policy"
     policy = jsonencode(
@@ -242,39 +247,136 @@ resource "aws_iam_role" "ci" {
       }
     )
   }
+
+  dynamic "inline_policy" {
+    for_each = local.pipeline_configs[each.key].deploy == true ? [each.value] : []
+
+    content {
+      name = "${inline_policy.value.name}-ecs-codebuild-policy"
+      policy = jsonencode(
+        {
+          Statement = [
+            {
+              Action = [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "ecr:GetAuthorizationToken",
+              ]
+              Effect   = "Allow"
+              Resource = "*"
+            },
+            {
+              Action = [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:GetObjectVersion",
+              ]
+              Effect   = "Allow"
+              Resource = "*"
+            },
+            {
+              Action = [
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:PutImage",
+                "ecr:InitiateLayerUpload",
+                "ecr:UploadLayerPart",
+                "ecr:CompleteLayerUpload",
+              ]
+              Effect   = "Allow"
+              Resource = "*"
+            },
+          ]
+          Version = "2012-10-17"
+        }
+      )
+    }
+  }
+
+  dynamic "inline_policy" {
+    for_each = local.pipeline_configs[each.key].pull == true ? [each.value] : []
+
+    content {
+      name = "${inline_policy.value.pull_build_name}-codebuild-policy"
+      policy = jsonencode(
+        {
+          Statement = [
+            {
+              Action = [
+                "acm:ListCertificates",
+                "apigateway:*",
+                "cloudformation:*",
+                "cloudwatch:*",
+                "codebuild:*",
+                "codecommit:GetBranch",
+                "codecommit:GetCommit",
+                "codecommit:GetRepository",
+                "codecommit:GitPull",
+                "codecommit:GitPush",
+                "codecommit:ListBranches",
+                "codecommit:ListRepositories",
+                "codepipeline:*Execution",
+                "codepipeline:Get*",
+                "codepipeline:List*",
+                "cognito-identity:*",
+                "cognito-idp:*",
+                "cognito-sync:*",
+                "dynamodb:*",
+                "ec2:*NetworkInterface*",
+                "ec2:DescribeDhcpOptions",
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeVpcs",
+                "ecr:*",
+                "eks:Describe*",
+                "events:*",
+                "execute-api:Invoke",
+                "execute-api:ManageConnections",
+                "iam:*",
+                "iot:*",
+                "kinesis:DescribeStream",
+                "kinesis:ListStreams",
+                "kinesis:PutRecord",
+                "kms:ListAliases",
+                "lambda:*",
+                "logs:*",
+                "mobiletargeting:GetApps",
+                "s3:*",
+                "ses:*",
+                "sns:*",
+                "sqs:ListQueues",
+                "sqs:SendMessage",
+                "ssm:*Parameter*",
+                "ssm:AddTagsToResource",
+                "ssm:RemoveTagsFromResource",
+                "tag:GetResources",
+                "xray:PutTelemetryRecords",
+                "xray:PutTraceSegments",
+              ]
+              Effect   = "Allow"
+              Resource = "*"
+            },
+          ]
+          Version = "2012-10-17"
+        }
+      )
+    }
+  }
+
   inline_policy {
-    name = "${each.value.name}-ecs-codebuild-policy"
+    name = "${each.value.name}-ci-codebuild-kms-policy"
     policy = jsonencode(
       {
         Statement = [
           {
             Action = [
-              "logs:CreateLogGroup",
-              "logs:CreateLogStream",
-              "logs:PutLogEvents",
-              "ecr:GetAuthorizationToken",
-            ]
-            Effect   = "Allow"
-            Resource = "*"
-          },
-          {
-            Action = [
-              "s3:GetObject",
-              "s3:PutObject",
-              "s3:GetObjectVersion",
-            ]
-            Effect   = "Allow"
-            Resource = "*"
-          },
-          {
-            Action = [
-              "ecr:GetDownloadUrlForLayer",
-              "ecr:BatchGetImage",
-              "ecr:BatchCheckLayerAvailability",
-              "ecr:PutImage",
-              "ecr:InitiateLayerUpload",
-              "ecr:UploadLayerPart",
-              "ecr:CompleteLayerUpload",
+              "kms:Encrypt",
+              "kms:Decrypt",
+              "kms:ReEncrypt*",
+              "kms:GenerateDataKey*",
+              "kms:DescribeKey",
             ]
             Effect   = "Allow"
             Resource = "*"
@@ -284,6 +386,7 @@ resource "aws_iam_role" "ci" {
       }
     )
   }
+
   tags = merge(var.tags, { Name : "${each.value.name}-service-role" })
 }
 

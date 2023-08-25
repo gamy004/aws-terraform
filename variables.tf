@@ -85,15 +85,16 @@ variable "build_configs" {
   type = object({
     environment_variables = object({
       # all    = any
+      pull   = any
       build  = any
       review = any
     }),
-    pipeline_stages             = any
-    pull_codebuild_project_name = string
+    pipeline_stages = any
   })
   default = {
     environment_variables = {
       # all    = {}
+      pull   = {}
       build  = {}
       review = {}
     }
@@ -101,6 +102,11 @@ variable "build_configs" {
       source = {
         "<application>-service-<environment>" = {
           provider = "CodeStarSourceConnection"
+        }
+      }
+      pull = {
+        "<application>-service-<environment>" = {
+          codebuild_name = ""
         }
       }
       build = {
@@ -113,7 +119,6 @@ variable "build_configs" {
         "<application>-service-<environment>" = true
       }
     }
-    pull_codebuild_project_name = ""
   }
 }
 

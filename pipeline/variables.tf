@@ -32,6 +32,7 @@ variable "configs" {
       review_build_name     = string
       pull_build_name       = string
       pipeline_name         = string
+      pull                  = bool
       build                 = bool
       deploy                = bool
       review                = bool
@@ -43,6 +44,12 @@ variable "configs" {
           })
         )
         review = map(
+          object({
+            type  = string
+            value = any
+          })
+        )
+        pull = map(
           object({
             type  = string
             value = any
@@ -64,6 +71,7 @@ variable "configs" {
       review_build_name     = string
       pull_build_name       = string
       pipeline_name         = string
+      pull                  = bool
       build                 = bool
       deploy                = bool
       review                = bool
@@ -75,6 +83,12 @@ variable "configs" {
           })
         )
         review = map(
+          object({
+            type  = string
+            value = any
+          })
+        )
+        pull = map(
           object({
             type  = string
             value = any
@@ -111,6 +125,7 @@ variable "configs" {
       review_build_name     = "<project>-<application>-service-review-codebuild-<environment>"
       pull_build_name       = "automationdoc-codebuild-pull-code"
       pipeline_name         = "<project>-<application>-service-codepipeline-<environment>"
+      pull                  = false
       build                 = true
       deploy                = true
       review                = true
@@ -128,6 +143,7 @@ variable "configs" {
             value = "ap-southeast-1"
           }
         }
+        pull = {}
       }
       tags = {
         Environment = "<environment>"
@@ -144,6 +160,7 @@ variable "configs" {
       review_build_name     = "<project>-<application>-web-review-codebuild-<environment>"
       pull_build_name       = "automationdoc-codebuild-pull-code"
       pipeline_name         = "<project>-<application>-web-codepipeline-<environment>"
+      pull                  = false
       build                 = true
       deploy                = false
       review                = true
@@ -160,6 +177,7 @@ variable "configs" {
             value = "ap-southeast-1"
           }
         }
+        pull = {}
       }
       tags = {
         Environment = "<environment>"
