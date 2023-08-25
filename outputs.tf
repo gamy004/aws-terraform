@@ -42,3 +42,7 @@
 # output "api_endpoints" {
 #   value = module.internal_lb.api_endpoints
 # }
+
+output "has_pipeline_review_stage" {
+  value = local.has_pipeline_review_stage
+}
