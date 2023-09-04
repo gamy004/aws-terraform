@@ -15,7 +15,7 @@ locals {
 resource "aws_ssm_parameter" "this" {
   for_each = try(merge(local.parameters...), {})
 
-  name   = each.key
+  name   = "/${each.key}"
   type   = each.value.type
   key_id = each.value.key_id
   tier   = each.value.tier
