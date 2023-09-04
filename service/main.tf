@@ -1,4 +1,6 @@
 locals {
+  current_account_id = data.aws_caller_identity.current.account_id
+
   iam_users = {
     for config in lookup(var.configs, "service_configs", []) : config.service_name => config
   }
@@ -29,9 +31,14 @@ locals {
           environment = [
             for variable_name, environment_variable in try(config.environment_variables, {}) : {
               name  = "${variable_name}"
-              type  = "${environment_variable.type}"
               value = "${environment_variable.value}"
-            }
+            } if environment_variable.type == "PLAINTEXT"
+          ]
+          secrets = [
+            for variable_name, environment_variable in try(config.environment_variables, {}) : {
+              name      = "${variable_name}"
+              valueFrom = "arn:aws:ssm:${var.region}:${local.current_account_id}:parameter/${environment_variable.valueFrom}"
+            } if environment_variable.type == "PARAMETER"
           ]
           image = "${var.ecr_repositories[config.service_name].repository_url}:latest"
           port_mappings = [
@@ -48,6 +55,8 @@ locals {
     }
   }
 }
+
+data "aws_caller_identity" "current" {}
 
 data "aws_iam_policy" "cognito_access" {
   arn = "arn:aws:iam::aws:policy/AmazonESCognitoAccess"

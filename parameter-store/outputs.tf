@@ -1,3 +1,3 @@
-# output "service_definitions" {
-#   value = local.service_definitions
-# }
+output "parameters" {
+  value = aws_ssm_parameter.this
+}

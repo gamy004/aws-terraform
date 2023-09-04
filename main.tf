@@ -513,6 +513,20 @@ module "database" {
   tags                = local.tags
 }
 
+## PARAMETER STORE
+module "parameter_store" {
+  providers = {
+    aws = aws.workload_infra_role
+  }
+
+  source = "./parameter-store"
+
+  region     = var.aws_region
+  kms_key_id = var.parameter_store_configs.kms_key_id
+  configs    = local.parameter_store_configs
+  tags       = local.tags
+}
+
 ## ECS
 module "service" {
   source = "./service"
@@ -724,17 +738,4 @@ module "authentication" {
   }
 
   tags = local.tags
-}
-
-module "parameter_store" {
-  providers = {
-    aws = aws.workload_infra_role
-  }
-
-  source = "./parameter-store"
-
-  region     = var.aws_region
-  kms_key_id = var.parameter_store_configs.kms_key_id
-  configs    = local.parameter_store_configs
-  tags       = local.tags
 }
