@@ -198,38 +198,24 @@ locals {
           ])
         }
       }
-
-      # clients = merge(
-      #   {
-      #     for application in var.applications : "${try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}")}" => {
-      #       refresh_token_validity = try(var.authentication_configs["${environment}"].client_configs[],90)
-      #       generate_secret        = true
-      #       explicit_auth_flows = [
-      #         "ALLOW_REFRESH_TOKEN_AUTH",
-      #         "ALLOW_USER_PASSWORD_AUTH",
-      #         "ALLOW_USER_SRP_AUTH",
-      #         "ALLOW_ADMIN_USER_PASSWORD_AUTH"
-      #       ]
-      #     }
-      #   },
-      #   {
-      #     for application in var.applications : "${try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}")}" => {
-      #       refresh_token_validity = 90
-      #       generate_secret        = false
-      #       explicit_auth_flows = [
-      #         "ALLOW_REFRESH_TOKEN_AUTH",
-      #         "ALLOW_USER_PASSWORD_AUTH",
-      #         "ALLOW_USER_SRP_AUTH"
-      #       ]
-      #     }
-      #   },
-
-      # )
       tags = {
         Environment = environment
       }
     }
   }
+
+  parameter_store_configs = flatten([
+    for environment in var.environments : [
+      for application in var.applications : {
+        prefix     = "${application}/${environment}"
+        parameters = try(var.parameter_store_configs.parameters["${application}-${environment}"], {})
+        tags = {
+          Environment = environment
+          Application = application
+        }
+      }
+    ]
+  ])
 }
 
 provider "aws" {
@@ -738,4 +724,16 @@ module "authentication" {
   }
 
   tags = local.tags
+}
+
+module "parameter_store" {
+  providers = {
+    aws = aws.workload_infra_role
+  }
+
+  source = "./parameter-store"
+
+  region     = var.aws_region
+  kms_key_id = var.parameter_store_configs.kms_key_id
+  configs    = local.parameter_store_configs
 }
