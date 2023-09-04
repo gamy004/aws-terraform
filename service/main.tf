@@ -1,6 +1,4 @@
 locals {
-  current_account_id = data.aws_caller_identity.current.account_id
-
   iam_users = {
     for config in lookup(var.configs, "service_configs", []) : config.service_name => config
   }
@@ -37,10 +35,10 @@ locals {
           secrets = [
             for variable_name, environment_variable in try(config.environment_variables, {}) : {
               name      = "${variable_name}"
-              valueFrom = "arn:aws:ssm:${var.region}:${local.current_account_id}:parameter/${environment_variable.valueFrom}"
+              valueFrom = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${environment_variable.valueFrom}"
             } if environment_variable.type == "PARAMETER"
           ]
-          image = "${var.ecr_repositories[config.service_name].repository_url}:latest"
+          image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${config.service_name}:latest"
           port_mappings = [
             {
               name          = "${config.service_name}-80-tcp"
