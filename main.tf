@@ -736,4 +736,5 @@ module "parameter_store" {
   region     = var.aws_region
   kms_key_id = var.parameter_store_configs.kms_key_id
   configs    = local.parameter_store_configs
+  tags       = local.tags
 }
