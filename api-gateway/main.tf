@@ -132,7 +132,7 @@ resource "aws_api_gateway_integration_response" "proxy_options_integration_respo
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,sentry-trace,baggage'"
     "method.response.header.Access-Control-Allow-Methods" = "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+    "method.response.header.Access-Control-Allow-Origin"  = length(each.value.allowed_origins) > 0 ? join(",", each.value.allowed_origins) : "'*'"
   }
 }
 

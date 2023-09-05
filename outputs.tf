@@ -42,3 +42,7 @@
 # output "api_endpoints" {
 #   value = module.internal_lb.api_endpoints
 # }
+
+output "api_configs" {
+  value = local.api_configs
+}

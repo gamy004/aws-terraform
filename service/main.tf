@@ -19,6 +19,10 @@ locals {
       enable_autoscaling        = try(config.enable_autoscaling, false)
       autoscaling_min_capacity  = try(config.autoscaling_min_capacity, 1)
       autoscaling_max_capacity  = try(config.autoscaling_max_capacity, 5)
+      deployment_circuit_breaker = {
+        enable   = true
+        rollback = true
+      }
       load_balancer = {
         service = {
           target_group_arn = element(var.configs.target_group_arns, index)

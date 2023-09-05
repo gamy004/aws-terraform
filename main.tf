@@ -14,6 +14,8 @@ locals {
         host_header_name  = "${try(var.backend_configs["${application}-${environment}"].sub_domain_name, "${environment}-api-${application}")}.${var.domain_name}"
         api_gateway_name  = "${application}-api-gw-${environment}"
         target_group_name = "${application}-ecs-tg-${environment}"
+        # module.s3_web[each.value.bucket_name].s3_bucket_bucket_regional_domain_name
+        allowed_origins = [for allowed_origin in try(var.backend_configs["${application}-${environment}"].allowed_origins, []) : "'${allowed_origin}'"]
         tags = {
           Environment = environment
           Application = application
