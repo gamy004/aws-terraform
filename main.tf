@@ -539,11 +539,13 @@ module "service" {
   vpc_id           = data.aws_vpc.workload_vpc.id
   ecr_repositories = module.pipeline.ecr_repositories
   configs = {
-    cluster_name       = "${var.project_name}-cluster-${var.stage}"
-    subnet_ids         = data.aws_subnets.private_subnets.ids
-    security_group_ids = [module.security_groups.app_sg.id]
-    target_group_arns  = module.internal_lb.private_alb.target_group_arns
-    service_configs    = local.service_ecs_configs
+    cluster_name                      = "${var.project_name}-cluster-${var.stage}"
+    subnet_ids                        = data.aws_subnets.private_subnets.ids
+    security_group_ids                = [module.security_groups.app_sg.id]
+    target_group_arns                 = module.internal_lb.private_alb.target_group_arns
+    parameter_store_access_policy_arn = data.aws_iam_policy.parameter_store_access.arn
+    s3_access_policy_arn              = data.aws_iam_policy.s3_access.arn
+    service_configs                   = local.service_ecs_configs
   }
   tags = local.tags
 }
