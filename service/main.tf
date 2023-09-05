@@ -81,8 +81,11 @@ data "aws_iam_policy_document" "dynamodb_access" {
 
 resource "aws_iam_user" "service" {
   for_each = local.iam_users
-  name     = each.value.service_name
-  tags     = merge(var.tags, { Name : "${each.value.service_name}" })
+  ignore_changes = [
+    tags
+  ]
+  name = each.value.service_name
+  tags = merge(var.tags, { Name : "${each.value.service_name}" })
 }
 
 resource "aws_iam_user_policy_attachment" "cognito_access" {
