@@ -189,14 +189,14 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   triggers = {
     redeployment = sha1(jsonencode([
       aws_api_gateway_rest_api.api[each.key].body,
-      aws_api_gateway_resource.proxy.id,
-      aws_api_gateway_method.proxy.id,
-      aws_api_gateway_method.proxy_options.id,
-      aws_api_gateway_integration.proxy.id,
-      aws_api_gateway_integration.proxy_options.id,
-      aws_api_gateway_method_response.proxy_method_response.id,
-      aws_api_gateway_method_response.proxy_options_method_response.id,
-      aws_api_gateway_integration_response.proxy_options_integration_response.id
+      aws_api_gateway_resource.proxy[each.key].id,
+      aws_api_gateway_method.proxy[each.key].id,
+      aws_api_gateway_method.proxy_options[each.key].id,
+      aws_api_gateway_integration.proxy[each.key].id,
+      aws_api_gateway_integration.proxy_options[each.key].id,
+      aws_api_gateway_method_response.proxy_method_response[each.key].id,
+      aws_api_gateway_method_response.proxy_options_method_response[each.key].id,
+      aws_api_gateway_integration_response.proxy_options_integration_response[each.key].id
     ]))
   }
   lifecycle {
