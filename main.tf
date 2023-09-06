@@ -89,6 +89,16 @@ locals {
               lookup(try(var.build_configs.environment_variables.build, {}), "all", {}),
               lookup(try(var.build_configs.environment_variables.build, {}), "${application}-service", {}),
               lookup(try(var.build_configs.environment_variables.build, {}), "${application}-service-${environment}", {}),
+              {
+                CF_ROLE_ARN = {
+                  type  = "PLAINTEXT"
+                  value = "${data.aws_iam_role.cloudfront_invalidation_role.arn}"
+                }
+                DISTRIBUTION_ID = {
+                  type  = "PLAINTEXT"
+                  value = "${module.api_cdn.cloudfront.cloudfront_distribution_id}"
+                }
+              }
             )
             review = merge(
               local.default_environment_variables,
