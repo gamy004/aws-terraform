@@ -109,23 +109,23 @@ resource "aws_api_gateway_integration" "proxy_options" {
   }
 }
 
-resource "aws_api_gateway_method_response" "proxy_method_response" {
-  for_each    = local.api_gateway_configs
-  rest_api_id = aws_api_gateway_rest_api.api[each.key].id
-  resource_id = aws_api_gateway_resource.proxy[each.key].id
-  http_method = aws_api_gateway_method.proxy[each.key].http_method
-  status_code = "200"
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Credentials" = true
-  }
-}
+# resource "aws_api_gateway_method_response" "proxy_method_response" {
+#   for_each    = local.api_gateway_configs
+#   rest_api_id = aws_api_gateway_rest_api.api[each.key].id
+#   resource_id = aws_api_gateway_resource.proxy[each.key].id
+#   http_method = aws_api_gateway_method.proxy[each.key].http_method
+#   status_code = "200"
+#   response_parameters = {
+#     "method.response.header.Access-Control-Allow-Credentials" = true
+#   }
+# }
 
 resource "aws_api_gateway_method_response" "proxy_options_method_response" {
   for_each    = local.api_gateway_configs
   rest_api_id = aws_api_gateway_rest_api.api[each.key].id
   resource_id = aws_api_gateway_resource.proxy[each.key].id
   http_method = aws_api_gateway_method.proxy_options[each.key].http_method
-  status_code = "200"
+  status_code = "204"
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers"     = true
     "method.response.header.Access-Control-Allow-Methods"     = true
@@ -196,7 +196,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.proxy_options[each.key].id,
       aws_api_gateway_integration.proxy[each.key].id,
       aws_api_gateway_integration.proxy_options[each.key].id,
-      aws_api_gateway_method_response.proxy_method_response[each.key].id,
+      # aws_api_gateway_method_response.proxy_method_response[each.key].id,
       aws_api_gateway_method_response.proxy_options_method_response[each.key].id,
       aws_api_gateway_integration_response.proxy_options_integration_response[each.key].id
     ]))
