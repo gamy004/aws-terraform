@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 locals {
   iam_users = {
     for config in lookup(var.configs, "service_configs", []) : config.service_name => config
