@@ -752,3 +752,22 @@ module "authentication" {
 
   tags = local.tags
 }
+
+module "automation" {
+  count = length(try(var.automation_configs.projects, [])) > 1 ? 1 : 0
+
+  providers = {
+    aws = aws.workload_infra_role
+  }
+
+  source = "./automation"
+  region = var.aws_region
+  configs = {
+    source_account_id = var.automation_configs.source_account_id
+    s3_bucket_name    = var.automation_configs.s3_bucket_name
+    assume_role_arn   = var.automation_configs.assume_role_arn
+    projects          = var.automation_configs.projects
+    pipeline_arns     = module.pipeline.pipeline_arns
+  }
+  tags = local.tags
+}
