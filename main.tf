@@ -5,7 +5,7 @@ locals {
     Terraform = true
   }
 
-  # has_pipeline_review_stage = contains(keys(var.build_configs.pipeline_stages), "review")
+  has_pipeline_review_stage = contains(keys(var.build_configs.pipeline_stages), "review")
 
   api_configs = flatten([
     for environment in var.environments : [
@@ -14,7 +14,8 @@ locals {
         host_header_name  = "${try(var.backend_configs["${application}-${environment}"].sub_domain_name, "${environment}-api-${application}")}.${var.domain_name}"
         api_gateway_name  = "${application}-api-gw-${environment}"
         target_group_name = "${application}-ecs-tg-${environment}"
-        allowed_origins   = [for allowed_origin in try(var.backend_configs["${application}-${environment}"].allowed_origins, []) : "'${allowed_origin}'"]
+        # module.s3_web[each.value.bucket_name].s3_bucket_bucket_regional_domain_name
+        allowed_origins = [for allowed_origin in try(var.backend_configs["${application}-${environment}"].allowed_origins, []) : "'${allowed_origin}'"]
         tags = {
           Environment = environment
           Application = application
@@ -23,19 +24,19 @@ locals {
     ]
   ])
 
-  # web_configs = flatten([
-  #   for environment in var.environments : [
-  #     for application in var.applications : {
-  #       host_header_name = "${try(var.frontend_configs["${application}-${environment}"].sub_domain_name, "${environment}-${application}")}.${var.domain_name}"
-  #       cloudfront_name  = "${application}-web-cf-${environment}"
-  #       bucket_name      = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in pipeline
-  #       tags = {
-  #         Environment = environment
-  #         Application = application
-  #       }
-  #     }
-  #   ]
-  # ])
+  web_configs = flatten([
+    for environment in var.environments : [
+      for application in var.applications : {
+        host_header_name = "${try(var.frontend_configs["${application}-${environment}"].sub_domain_name, "${environment}-${application}")}.${var.domain_name}"
+        cloudfront_name  = "${application}-web-cf-${environment}"
+        bucket_name      = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in pipeline
+        tags = {
+          Environment = environment
+          Application = application
+        }
+      }
+    ]
+  ])
 
   default_environment_variables = {
     AWS_DEFAULT_REGION = {
@@ -44,24 +45,24 @@ locals {
     }
   }
 
-  # service_ecs_configs = flatten([
-  #   for environment in var.environments : [
-  #     for application in var.applications : merge(
-  #       lookup(var.backend_configs, "${application}-${environment}", {}),
-  #       {
-  #         service_name = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}") # must match with `service_name` in pipeline
-  #         environment_variables = merge(
-  #           local.default_environment_variables,
-  #           try(var.backend_configs["${application}-${environment}"].environment_variables, {}),
-  #         )
-  #         tags = {
-  #           Environment = environment
-  #           Application = application
-  #         }
-  #       }
-  #     )
-  #   ]
-  # ])
+  service_ecs_configs = flatten([
+    for environment in var.environments : [
+      for application in var.applications : merge(
+        lookup(var.backend_configs, "${application}-${environment}", {}),
+        {
+          service_name = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}") # must match with `service_name` in pipeline
+          environment_variables = merge(
+            local.default_environment_variables,
+            try(var.backend_configs["${application}-${environment}"].environment_variables, {}),
+          )
+          tags = {
+            Environment = environment
+            Application = application
+          }
+        }
+      )
+    ]
+  ])
 
   service_pipeline_configs = flatten([
     for environment in var.environments : [
@@ -380,31 +381,36 @@ data "aws_subnets" "public_subnets" {
   }
 }
 
-# data "aws_subnet" "review" {
-#   count = local.has_pipeline_review_stage ? 1 : 0
+data "aws_subnet" "review" {
+  count = local.has_pipeline_review_stage ? 1 : 0
 
-#   provider = aws.workload_infra_role
-#   filter {
-#     name   = "tag:Name"
-#     values = ["${data.aws_iam_account_alias.workload_account_alias.account_alias}-app-b"]
-#   }
-# }
+  provider = aws.workload_infra_role
+  filter {
+    name   = "tag:Name"
+    values = ["${data.aws_iam_account_alias.workload_account_alias.account_alias}-app-b"]
+  }
+}
 
-# data "aws_security_group" "review" {
-#   count = local.has_pipeline_review_stage ? 1 : 0
+data "aws_security_group" "review" {
+  count = local.has_pipeline_review_stage ? 1 : 0
 
-#   provider = aws.workload_infra_role
-#   filter {
-#     name   = "tag:Name"
-#     values = ["kmutt-codebuild-sg-${var.stage}"]
-#   }
-# }
+  provider = aws.workload_infra_role
+  filter {
+    name   = "tag:Name"
+    values = ["kmutt-codebuild-sg-${var.stage}"]
+  }
+}
 
-# data "aws_vpc_endpoint" "api_gateway_endpoint" {
-#   provider     = aws.workload_infra_role
-#   vpc_id       = data.aws_vpc.workload_vpc.id
-#   service_name = "com.amazonaws.${var.aws_region}.execute-api"
-# }
+data "aws_db_subnet_group" "database" {
+  provider = aws.workload_database_role
+  name     = var.db_configs.subnet_group_name
+}
+
+data "aws_vpc_endpoint" "api_gateway_endpoint" {
+  provider     = aws.workload_infra_role
+  vpc_id       = data.aws_vpc.workload_vpc.id
+  service_name = "com.amazonaws.${var.aws_region}.execute-api"
+}
 
 module "security_groups" {
   source = "./seceruity-group"
@@ -431,76 +437,76 @@ module "security_groups" {
 }
 
 # Internal Load Balancer
-# module "internal_lb" {
-#   source = "./internal-load-balancer"
+module "internal_lb" {
+  source = "./internal-load-balancer"
 
-#   providers = {
-#     aws = aws.workload_infra_role
-#   }
+  providers = {
+    aws = aws.workload_infra_role
+  }
 
-#   vpc_id          = data.aws_vpc.workload_vpc.id
-#   certificate_arn = data.aws_acm_certificate.workload_certificate.arn
-#   configs = {
-#     public_alb_name                = "${var.project_name}-alb-${var.stage}"
-#     private_alb_name               = "${var.project_name}-internal-alb-${var.stage}"
-#     private_nlb_name               = "${var.project_name}-internal-nlb-${var.stage}"
-#     public_alb_target_group_name   = "${var.project_name}-api-gw-tg-${var.stage}"
-#     private_nlb_target_group_name  = "${var.project_name}-internal-nlb-tg-${var.stage}"
-#     public_alb_security_group_ids  = [module.security_groups.public_alb_sg.id]
-#     private_alb_security_group_ids = [module.security_groups.private_alb_sg.id]
-#     public_alb_subnet_ids          = data.aws_subnets.public_subnets.ids
-#     private_alb_subnet_ids         = data.aws_subnets.private_subnets.ids
-#     private_nlb_subnet_ids         = data.aws_subnets.private_subnets.ids
-#     api_gateway_vpc_endpoint_ids   = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
-#     api_configs                    = local.api_configs
-#   }
-#   tags = local.tags
-# }
+  vpc_id          = data.aws_vpc.workload_vpc.id
+  certificate_arn = data.aws_acm_certificate.workload_certificate.arn
+  configs = {
+    public_alb_name                = "${var.project_name}-alb-${var.stage}"
+    private_alb_name               = "${var.project_name}-internal-alb-${var.stage}"
+    private_nlb_name               = "${var.project_name}-internal-nlb-${var.stage}"
+    public_alb_target_group_name   = "${var.project_name}-api-gw-tg-${var.stage}"
+    private_nlb_target_group_name  = "${var.project_name}-internal-nlb-tg-${var.stage}"
+    public_alb_security_group_ids  = [module.security_groups.public_alb_sg.id]
+    private_alb_security_group_ids = [module.security_groups.private_alb_sg.id]
+    public_alb_subnet_ids          = data.aws_subnets.public_subnets.ids
+    private_alb_subnet_ids         = data.aws_subnets.private_subnets.ids
+    private_nlb_subnet_ids         = data.aws_subnets.private_subnets.ids
+    api_gateway_vpc_endpoint_ids   = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
+    api_configs                    = local.api_configs
+  }
+  tags = local.tags
+}
 
 ## External Load Balancer
-# module "external_lb" {
-#   source = "./external-load-balancer"
+module "external_lb" {
+  source = "./external-load-balancer"
 
-#   providers = {
-#     aws = aws.network_infra_role
-#   }
+  providers = {
+    aws = aws.network_infra_role
+  }
 
-#   region          = var.aws_region
-#   vpc_id          = data.aws_vpc.network_vpc.id
-#   certificate_arn = data.aws_acm_certificate.network_certificate.arn
-#   configs = {
-#     name                         = "${var.project_name}-external-alb-${var.stage}"
-#     target_group_name            = "${var.project_name}-external-alb-tg-${var.stage}"
-#     security_group_ids           = [module.security_groups.external_alb_sg.id]
-#     subnet_ids                   = data.aws_subnets.external_subnets.ids
-#     internal_public_alb_dns_name = module.internal_lb.public_alb.lb_dns_name
-#   }
-#   tags = local.tags
-# }
+  region          = var.aws_region
+  vpc_id          = data.aws_vpc.network_vpc.id
+  certificate_arn = data.aws_acm_certificate.network_certificate.arn
+  configs = {
+    name                         = "${var.project_name}-external-alb-${var.stage}"
+    target_group_name            = "${var.project_name}-external-alb-tg-${var.stage}"
+    security_group_ids           = [module.security_groups.external_alb_sg.id]
+    subnet_ids                   = data.aws_subnets.external_subnets.ids
+    internal_public_alb_dns_name = module.internal_lb.public_alb.lb_dns_name
+  }
+  tags = local.tags
+}
 
 ## API Gateway
-# module "api_gateway" {
-#   source = "./api-gateway"
+module "api_gateway" {
+  source = "./api-gateway"
 
-#   providers = {
-#     aws = aws.workload_infra_role
-#   }
+  providers = {
+    aws = aws.workload_infra_role
+  }
 
-#   region              = var.aws_region
-#   vpc_id              = data.aws_vpc.workload_vpc.id
-#   domain_name         = var.domain_name
-#   cloudwatch_role_arn = data.aws_iam_role.api_gateway_cloudwatch_role.arn
-#   certificate_arn     = data.aws_acm_certificate.workload_certificate.arn
-#   configs = {
-#     name                         = "${var.project_name}-api-gw-${var.stage}"
-#     vpc_link_name                = "${var.project_name}-vpclink-${var.stage}"
-#     vpc_endpoint_ids             = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
-#     private_nlb_target_group_arn = module.internal_lb.private_nlb.lb_arn
-#     private_nlb_dns_name         = module.internal_lb.private_nlb.lb_dns_name
-#     api_configs                  = local.api_configs
-#   }
-#   tags = local.tags
-# }
+  region              = var.aws_region
+  vpc_id              = data.aws_vpc.workload_vpc.id
+  domain_name         = var.domain_name
+  cloudwatch_role_arn = data.aws_iam_role.api_gateway_cloudwatch_role.arn
+  certificate_arn     = data.aws_acm_certificate.workload_certificate.arn
+  configs = {
+    name                         = "${var.project_name}-api-gw-${var.stage}"
+    vpc_link_name                = "${var.project_name}-vpclink-${var.stage}"
+    vpc_endpoint_ids             = [data.aws_vpc_endpoint.api_gateway_endpoint.id]
+    private_nlb_target_group_arn = module.internal_lb.private_nlb.lb_arn
+    private_nlb_dns_name         = module.internal_lb.private_nlb.lb_dns_name
+    api_configs                  = local.api_configs
+  }
+  tags = local.tags
+}
 
 ## Database
 module "database" {
@@ -541,8 +547,9 @@ module "service" {
     aws = aws.workload_infra_role
   }
 
-  region = var.aws_region
-  vpc_id = data.aws_vpc.workload_vpc.id
+  region           = var.aws_region
+  vpc_id           = data.aws_vpc.workload_vpc.id
+  ecr_repositories = module.pipeline.ecr_repositories
   configs = {
     cluster_name                      = "${var.project_name}-cluster-${var.stage}"
     subnet_ids                        = data.aws_subnets.private_subnets.ids
@@ -580,7 +587,6 @@ module "pipeline" {
   tags = local.tags
 }
 
-## WAF
 module "waf" {
   source = "./waf"
 
@@ -595,7 +601,6 @@ module "waf" {
   }
 }
 
-## API CDN
 module "api_cdn" {
   source = "./backend-cdn"
 
@@ -647,7 +652,6 @@ module "api_cdn" {
   tags = local.tags
 }
 
-## FRONTEND CLOUD STORAGE & CDN
 module "s3_web" {
   providers = {
     aws = aws.workload_infra_role
@@ -727,7 +731,6 @@ module "web_cdn" {
   tags = local.tags
 }
 
-## IDP
 module "authentication" {
   for_each = local.authentication_configs
 
