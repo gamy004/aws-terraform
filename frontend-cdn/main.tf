@@ -54,5 +54,18 @@ module "cf" {
     ssl_support_method             = "sni-only"
   }
 
+  custom_error_response = [
+    {
+      error_code         = 404
+      response_code      = 200
+      response_page_path = "/index.html"
+    },
+    {
+      error_code         = 403
+      response_code      = 200
+      response_page_path = "/index.html"
+    }
+  ]
+
   tags = merge(var.tags, { Name : "${var.configs.cf_name}" })
 }

@@ -8,30 +8,24 @@ variable "vpc_id" {
   type        = string
 }
 
-# variable "ecr_repositories" {
-#   description = "Value of the ecr repositories for the service"
-#   type        = any
-#   default = {
-#     "<application>-service-<environment>" = {
-#       repository_url = "aws_account_id.dkr.ecr.region.amazonaws.com/repositoryName"
-#     }
-#   }
-# }
-
 variable "configs" {
   description = "Value of the configurations for the service"
   type = object({
-    cluster_name       = string
-    subnet_ids         = list(string)
-    security_group_ids = list(string)
-    target_group_arns  = list(string)
-    service_configs    = any
+    cluster_name                      = string
+    subnet_ids                        = list(string)
+    security_group_ids                = list(string)
+    target_group_arns                 = list(string)
+    parameter_store_access_policy_arn = string
+    s3_access_policy_arn              = string
+    service_configs                   = any
   })
   default = {
-    cluster_name       = "<project>-cluster-<stage>"
-    subnet_ids         = []
-    security_group_ids = []
-    target_group_arns  = []
+    cluster_name                      = "<project>-cluster-<stage>"
+    subnet_ids                        = []
+    security_group_ids                = []
+    target_group_arns                 = []
+    parameter_store_access_policy_arn = ""
+    s3_access_policy_arn              = ""
     service_configs = [{
       service_name             = "<application>-service-<environment>"
       desired_count            = 1    #optional

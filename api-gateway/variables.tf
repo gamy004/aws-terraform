@@ -34,6 +34,7 @@ variable "configs" {
     api_configs = list(object({
       host_header_name = string
       api_gateway_name = string
+      allowed_origins  = list(string)
       tags = object({
         Environment = string
         Application = string
@@ -49,6 +50,7 @@ variable "configs" {
     api_configs = [{
       host_header_name = "<environment>-api-<application>.<domain>"
       api_gateway_name = "<application>-api-gw-<environment>"
+      allowed_origins  = ["<application>.domain.com"]
       tags = {
         Environment = "<environment>"
         Application = "<>"

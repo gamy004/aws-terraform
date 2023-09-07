@@ -109,16 +109,28 @@ resource "aws_api_gateway_integration" "proxy_options" {
   }
 }
 
+# resource "aws_api_gateway_method_response" "proxy_method_response" {
+#   for_each    = local.api_gateway_configs
+#   rest_api_id = aws_api_gateway_rest_api.api[each.key].id
+#   resource_id = aws_api_gateway_resource.proxy[each.key].id
+#   http_method = aws_api_gateway_method.proxy[each.key].http_method
+#   status_code = "200"
+#   response_parameters = {
+#     "method.response.header.Access-Control-Allow-Credentials" = true
+#   }
+# }
+
 resource "aws_api_gateway_method_response" "proxy_options_method_response" {
   for_each    = local.api_gateway_configs
   rest_api_id = aws_api_gateway_rest_api.api[each.key].id
   resource_id = aws_api_gateway_resource.proxy[each.key].id
   http_method = aws_api_gateway_method.proxy_options[each.key].http_method
-  status_code = "200"
+  status_code = "204"
   response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true
-    "method.response.header.Access-Control-Allow-Origin"  = true
+    "method.response.header.Access-Control-Allow-Headers"     = true
+    "method.response.header.Access-Control-Allow-Methods"     = true
+    "method.response.header.Access-Control-Allow-Origin"      = true
+    "method.response.header.Access-Control-Allow-Credentials" = true
   }
 }
 
@@ -130,9 +142,10 @@ resource "aws_api_gateway_integration_response" "proxy_options_integration_respo
   status_code      = aws_api_gateway_method_response.proxy_options_method_response[each.key].status_code
   content_handling = "CONVERT_TO_TEXT"
   response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,sentry-trace,baggage'"
-    "method.response.header.Access-Control-Allow-Methods" = "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+    "method.response.header.Access-Control-Allow-Headers"     = "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,sentry-trace,baggage'"
+    "method.response.header.Access-Control-Allow-Methods"     = "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+    "method.response.header.Access-Control-Allow-Origin"      = length(each.value.allowed_origins) > 0 ? join(",", each.value.allowed_origins) : "'*'"
+    "method.response.header.Access-Control-Allow-Credentials" = "'true'"
   }
 }
 
@@ -176,7 +189,17 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   depends_on  = [aws_api_gateway_rest_api_policy.api_policy]
   rest_api_id = aws_api_gateway_rest_api.api[each.key].id
   triggers = {
-    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.api[each.key].body))
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_rest_api.api[each.key].body,
+      aws_api_gateway_resource.proxy[each.key].id,
+      aws_api_gateway_method.proxy[each.key].id,
+      aws_api_gateway_method.proxy_options[each.key].id,
+      aws_api_gateway_integration.proxy[each.key].id,
+      aws_api_gateway_integration.proxy_options[each.key].id,
+      # aws_api_gateway_method_response.proxy_method_response[each.key].id,
+      aws_api_gateway_method_response.proxy_options_method_response[each.key].id,
+      aws_api_gateway_integration_response.proxy_options_integration_response[each.key].id
+    ]))
   }
   lifecycle {
     create_before_destroy = true

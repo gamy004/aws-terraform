@@ -165,3 +165,24 @@ variable "authentication_configs" {
     }
   }
 }
+
+variable "parameter_store_configs" {
+  type = any
+  default = {
+    kms_key_id = ""
+    parameters = {
+      "<application>-web-<stage>" = {
+        secure_param = {
+          name  = "secure-param"
+          type  = "SecureString"
+          value = "1234"
+        }
+        normal_param = {
+          name  = "normal-param"
+          type  = "String"
+          value = "1234"
+        }
+      }
+    }
+  }
+}
