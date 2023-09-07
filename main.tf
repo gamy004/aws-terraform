@@ -576,7 +576,7 @@ module "pipeline" {
     parameter_store_access_policy_arn = data.aws_iam_policy.parameter_store_access.arn
     s3_access_policy_arn              = data.aws_iam_policy.s3_access.arn
     cloudfront_invalidation_role_arn  = data.aws_iam_role.cloudfront_invalidation_role.arn
-    s3_artifact_bucket_name           = "${var.project_name}-artifacts"
+    s3_artifact_bucket_name           = "${var.project_name}-artifacts-${var.workload_account_id}"
     review_subnet_ids                 = local.has_pipeline_review_stage ? [for subnet in data.aws_subnet.review : subnet.id] : []
     review_security_group_ids         = local.has_pipeline_review_stage ? [for security_group in data.aws_security_group.review : security_group.id] : []
     service_pipeline_configs          = local.service_pipeline_configs
