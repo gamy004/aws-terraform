@@ -17,3 +17,7 @@ output "pipeline_configs" {
 output "ecr_repositories" {
   value = aws_ecr_repository.pipeline
 }
+
+output "pipeline_arns" {
+  value = { for key, pipeline in aws_codepipeline.pipeline : key => pipeline.arn }
+}

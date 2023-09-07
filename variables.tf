@@ -186,3 +186,19 @@ variable "parameter_store_configs" {
     }
   }
 }
+
+variable "automation_configs" {
+  type = object({
+    source_account_id = string
+    s3_bucket_name    = string
+    assume_role_arn   = string
+    projects          = list(string)
+  })
+
+  default = {
+    source_account_id = ""
+    s3_bucket_name    = ""
+    assume_role_arn   = ""
+    projects          = []
+  }
+}
