@@ -72,7 +72,7 @@ locals {
           }
         )
 
-      }
+      } if config.review == true
     },
     {
       for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
@@ -92,36 +92,41 @@ locals {
             }
           }
         )
-
-      }
+      } if config.review == true
     }
   )
 
   pipeline_configs = merge(
     {
       for config in lookup(var.configs, "service_pipeline_configs", []) : config.service_name => {
-        name            = "${config.pipeline_name}"
-        repo_name       = "${config.repo_name}"
-        source_provider = "${config.source_provider}"
-        repo_id         = var.configs.repo_configs[config.repo_name].id
-        repo_branch     = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
-        pull            = try(config.pull, false)
-        build           = try(config.build, true)
-        deploy          = try(config.deploy, true)
-        review          = try(config.review, true)
+        name                  = "${config.pipeline_name}"
+        repo_name             = "${config.repo_name}"
+        source_provider       = "${config.source_provider}"
+        source_s3_bucket_name = "${config.source_s3_bucket_name}"
+        source_s3_object_key  = "${config.source_s3_object_key}"
+        pull_build_name       = "${config.pull_build_name}"
+        repo_id               = var.configs.repo_configs[config.repo_name].id
+        repo_branch           = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
+        pull                  = try(config.pull, false)
+        build                 = try(config.build, true)
+        deploy                = try(config.deploy, true)
+        review                = try(config.review, true)
       }
     },
     {
       for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
-        name            = "${config.pipeline_name}"
-        repo_name       = "${config.repo_name}"
-        source_provider = "${config.source_provider}"
-        repo_id         = var.configs.repo_configs[config.repo_name].id
-        repo_branch     = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
-        pull            = try(config.pull, false)
-        build           = try(config.build, true)
-        deploy          = try(config.deploy, false)
-        review          = try(config.review, true)
+        name                  = "${config.pipeline_name}"
+        repo_name             = "${config.repo_name}"
+        source_provider       = "${config.source_provider}"
+        source_s3_bucket_name = "${config.source_s3_bucket_name}"
+        source_s3_object_key  = "${config.source_s3_object_key}"
+        pull_build_name       = "${config.pull_build_name}"
+        repo_id               = var.configs.repo_configs[config.repo_name].id
+        repo_branch           = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
+        pull                  = try(config.pull, false)
+        build                 = try(config.build, true)
+        deploy                = try(config.deploy, false)
+        review                = try(config.review, true)
       }
     }
   )
@@ -918,8 +923,8 @@ resource "aws_codepipeline" "pipeline" {
         category = "Source"
         configuration = {
           "PollForSourceChanges" = "false"
-          "S3Bucket"             = "${each.value.s3_source_bucket_name}"
-          "S3ObjectKey"          = "${each.value.s3_source_object_key}"
+          "S3Bucket"             = "${each.value.source_s3_bucket_name}"
+          "S3ObjectKey"          = "${each.value.source_s3_object_key}"
         }
         input_artifacts = []
         name            = "Source"
