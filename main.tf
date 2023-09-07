@@ -562,29 +562,29 @@ module "service" {
 }
 
 ## CODE PIPELINE
-module "pipeline" {
-  source = "./pipeline"
+# module "pipeline" {
+#   source = "./pipeline"
 
-  providers = {
-    aws = aws.workload_infra_role
-  }
+#   providers = {
+#     aws = aws.workload_infra_role
+#   }
 
-  region = var.aws_region
-  vpc_id = data.aws_vpc.workload_vpc.id
-  configs = {
-    cluster_name                      = "${var.project_name}-cluster-${var.stage}"
-    parameter_store_access_policy_arn = data.aws_iam_policy.parameter_store_access.arn
-    s3_access_policy_arn              = data.aws_iam_policy.s3_access.arn
-    cloudfront_invalidation_role_arn  = data.aws_iam_role.cloudfront_invalidation_role.arn
-    s3_artifact_bucket_name           = "${var.project_name}-artifacts-${var.workload_account_id}"
-    review_subnet_ids                 = local.has_pipeline_review_stage ? [for subnet in data.aws_subnet.review : subnet.id] : []
-    review_security_group_ids         = local.has_pipeline_review_stage ? [for security_group in data.aws_security_group.review : security_group.id] : []
-    service_pipeline_configs          = local.service_pipeline_configs
-    web_pipeline_configs              = local.web_pipeline_configs
-    repo_configs                      = try(var.repo_configs, {})
-  }
-  tags = local.tags
-}
+#   region = var.aws_region
+#   vpc_id = data.aws_vpc.workload_vpc.id
+#   configs = {
+#     cluster_name                      = "${var.project_name}-cluster-${var.stage}"
+#     parameter_store_access_policy_arn = data.aws_iam_policy.parameter_store_access.arn
+#     s3_access_policy_arn              = data.aws_iam_policy.s3_access.arn
+#     cloudfront_invalidation_role_arn  = data.aws_iam_role.cloudfront_invalidation_role.arn
+#     s3_artifact_bucket_name           = "${var.project_name}-artifacts-${var.workload_account_id}"
+#     review_subnet_ids                 = local.has_pipeline_review_stage ? [for subnet in data.aws_subnet.review : subnet.id] : []
+#     review_security_group_ids         = local.has_pipeline_review_stage ? [for security_group in data.aws_security_group.review : security_group.id] : []
+#     service_pipeline_configs          = local.service_pipeline_configs
+#     web_pipeline_configs              = local.web_pipeline_configs
+#     repo_configs                      = try(var.repo_configs, {})
+#   }
+#   tags = local.tags
+# }
 
 module "waf" {
   source = "./waf"
@@ -753,21 +753,21 @@ module "authentication" {
   tags = local.tags
 }
 
-module "automation" {
-  count = length(try(var.automation_configs.projects, [])) > 1 ? 1 : 0
+# module "automation" {
+#   count = length(try(var.automation_configs.projects, [])) > 1 ? 1 : 0
 
-  providers = {
-    aws = aws.workload_infra_role
-  }
+#   providers = {
+#     aws = aws.workload_infra_role
+#   }
 
-  source = "./automation"
-  region = var.aws_region
-  configs = {
-    source_account_id = var.automation_configs.source_account_id
-    s3_bucket_name    = var.automation_configs.s3_bucket_name
-    assume_role_arn   = var.automation_configs.assume_role_arn
-    projects          = var.automation_configs.projects
-    pipeline_arns     = module.pipeline.pipeline_arns
-  }
-  tags = local.tags
-}
+#   source = "./automation"
+#   region = var.aws_region
+#   configs = {
+#     source_account_id = var.automation_configs.source_account_id
+#     s3_bucket_name    = var.automation_configs.s3_bucket_name
+#     assume_role_arn   = var.automation_configs.assume_role_arn
+#     projects          = var.automation_configs.projects
+#     pipeline_arns     = module.pipeline.pipeline_arns
+#   }
+#   tags = local.tags
+# }
