@@ -72,7 +72,7 @@ locals {
           }
         )
 
-      }
+      } if config.review == true
     },
     {
       for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
@@ -92,8 +92,7 @@ locals {
             }
           }
         )
-
-      }
+      } if config.review == true
     }
   )
 
