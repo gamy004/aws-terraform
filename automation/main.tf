@@ -130,7 +130,7 @@ resource "aws_iam_policy" "start_pipeline_execution" {
   for_each = toset(var.configs.projects)
 
   description = "Allows Amazon CloudWatch Events to automatically start a new execution in the ${each.key}-codepipeline pipeline when a change occurs"
-  name        = "start-pipeline-execution-${var.region}-${each.key}-codepipeline"
+  name        = "start-pipeline-execution-${each.key}-codepipeline"
   path        = "/service-role/"
   policy = jsonencode(
     {
@@ -148,7 +148,7 @@ resource "aws_iam_policy" "start_pipeline_execution" {
       Version = "2012-10-17"
     }
   )
-  tags = merge(var.tags, { Name = "start-pipeline-execution-${var.region}-${each.key}-codepipeline" })
+  tags = merge(var.tags, { Name = "start-pipeline-execution-${each.key}-codepipeline" })
 }
 
 resource "aws_iam_role" "assume_cwe_role_codepipeline" {
@@ -176,9 +176,9 @@ resource "aws_iam_role" "assume_cwe_role_codepipeline" {
   ]
 
   max_session_duration = 3600
-  name                 = "cwe-role-${var.region}-${var.tags.Project}-${each.key}-codepipeline"
+  name                 = "cwe-role-${each.key}-codepipeline"
   path                 = "/service-role/"
-  tags                 = merge(var.tags, { Name = "cwe-role-${var.region}-${var.tags.Project}-${each.key}-codepipeline" })
+  tags                 = merge(var.tags, { Name = "cwe-role-${each.key}-codepipeline" })
 
 }
 
