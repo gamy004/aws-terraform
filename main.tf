@@ -769,4 +769,5 @@ module "automation" {
     projects          = var.automation_configs.projects
     pipeline_arns     = module.pipeline.pipeline_arns
   }
+  tags = local.tags
 }
