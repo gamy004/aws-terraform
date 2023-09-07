@@ -969,8 +969,7 @@ resource "aws_codepipeline" "pipeline" {
           "${each.value.name}-pull",
         ]
         owner     = "AWS"
-        provider  = "S3"
-        region    = var.region
+        provider  = "CodeBuild"
         run_order = 1
         version   = "1"
       }
