@@ -1,9 +1,3 @@
-locals {
-  current_account_id = data.aws_caller_identity.current.account_id
-}
-
-data "aws_caller_identity" "current" {}
-
 resource "aws_ssm_document" "manual_deploy" {
   content = jsonencode(
     {
@@ -141,7 +135,7 @@ resource "aws_iam_policy" "start_pipeline_execution" {
           ]
           Effect = "Allow"
           Resource = [
-            "arn:aws:codepipeline:${var.region}:${local.current_account_id}:${each.key}-codepipeline",
+            var.configs.pipeline_arns[each.key]
           ]
         },
       ]
