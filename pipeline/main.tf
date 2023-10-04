@@ -1064,7 +1064,7 @@ resource "aws_codepipeline" "pipeline" {
           "ServiceName" = each.key
         }
         input_artifacts = [
-          "${each.value.name}-build",
+          "${each.value.name}-${each.value.pull ? "pull" : "build"}",
         ]
         name             = "Deploy"
         output_artifacts = []
