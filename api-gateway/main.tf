@@ -16,7 +16,14 @@ resource "aws_api_gateway_vpc_link" "vpc_link_to_nlb" {
 }
 
 resource "aws_api_gateway_rest_api" "api" {
-  for_each                     = local.api_gateway_configs
+  for_each = local.api_gateway_configs
+
+  lifecycle {
+    ignore_changes = [
+      body
+    ]
+  }
+
   name                         = each.key
   description                  = "THe API Gateway for ${each.key}"
   disable_execute_api_endpoint = true
