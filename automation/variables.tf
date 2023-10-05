@@ -11,6 +11,7 @@ variable "configs" {
     assume_role_arn   = string
     projects          = list(string)
     pipeline_arns     = map(string)
+    pipeline_mappings = map(string)
   })
   default = {
     source_account_id = ""
@@ -19,6 +20,9 @@ variable "configs" {
     projects          = ["<application>-<environment>"]
     pipeline_arns = {
       "<application>-<environment>" = ""
+    }
+    pipeline_mappings = {
+      "<application>-<environment>" = "<application>-<environment>"
     }
   }
 }
