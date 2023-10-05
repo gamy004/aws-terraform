@@ -135,7 +135,7 @@ resource "aws_iam_policy" "start_pipeline_execution" {
           ]
           Effect = "Allow"
           Resource = [
-            var.configs.pipeline_arns[each.key]
+            var.configs.pipeline_arns[var.configs.pipeline_mappings[each.key]]
           ]
         },
       ]
@@ -181,6 +181,6 @@ resource "aws_cloudwatch_event_target" "app-web-codepipeline" {
 
   rule           = aws_cloudwatch_event_rule.pipeline_trigger_deploy[each.key].name
   event_bus_name = try(var.configs.event_bus_name, "default")
-  arn            = var.configs.pipeline_arns[each.key]
+  arn            = var.configs.pipeline_arns[var.configs.pipeline_mappings[each.key]]
   role_arn       = aws_iam_role.assume_cwe_role_codepipeline[each.key].arn
 }

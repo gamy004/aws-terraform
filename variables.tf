@@ -193,6 +193,7 @@ variable "automation_configs" {
     s3_bucket_name    = string
     assume_role_arn   = string
     projects          = list(string)
+    pipeline_mappings = map(string)
   })
 
   default = {
@@ -200,5 +201,8 @@ variable "automation_configs" {
     s3_bucket_name    = ""
     assume_role_arn   = ""
     projects          = []
+    pipeline_mappings = {
+      "<application>-web-<environment>" = "<application>-web-<environment>"
+    }
   }
 }
