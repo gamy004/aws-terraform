@@ -197,7 +197,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   rest_api_id = aws_api_gateway_rest_api.api[each.key].id
   triggers = {
     redeployment = sha1(jsonencode([
-      aws_api_gateway_rest_api.api[each.key].body,
+      # aws_api_gateway_rest_api.api[each.key].body,
       aws_api_gateway_resource.proxy[each.key].id,
       aws_api_gateway_method.proxy[each.key].id,
       aws_api_gateway_method.proxy_options[each.key].id,
