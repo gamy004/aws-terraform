@@ -768,6 +768,7 @@ module "automation" {
     assume_role_arn   = var.automation_configs.assume_role_arn
     projects          = var.automation_configs.projects
     pipeline_arns     = module.pipeline.pipeline_arns
+    pipeline_mappings = var.automation_configs.pipeline_mappings
   }
   tags = local.tags
 }
