@@ -89,6 +89,7 @@ variable "build_configs" {
       build  = any
       review = any
     }),
+    ecr_configs     = any
     pipeline_stages = any
   })
   default = {
@@ -97,6 +98,14 @@ variable "build_configs" {
       pull   = {}
       build  = {}
       review = {}
+    }
+    ecr_configs = {
+      "<application>-service-<environment>" = {
+        aloow_pull_cross_account = true
+        allow_pull_principle_arns = {
+          AWS = "arn"
+        }
+      }
     }
     pipeline_stages = {
       source = {
