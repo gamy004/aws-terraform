@@ -26,12 +26,12 @@ locals {
       load_balancer = {
         service = {
           target_group_arn = element(var.configs.target_group_arns, index)
-          container_name   = "${config.service_name}"
+          container_name   = "${config.container_name}"
           container_port   = 80
         }
       }
       container_definitions = {
-        (config.service_name) = {
+        (config.container_name) = {
           cpu       = try(config.task_cpu, 512)
           memory    = try(config.task_memory, 1024)
           essential = true
