@@ -50,7 +50,8 @@ locals {
       for application in var.applications : merge(
         lookup(var.backend_configs, "${application}-${environment}", {}),
         {
-          service_name = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}") # must match with `service_name` in pipeline
+          service_name   = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}") # must match with `service_name` in pipeline
+          container_name = try(var.backend_configs["${application}-${environment}"].container_name, "${application}-service")
           environment_variables = merge(
             local.default_environment_variables,
             try(var.backend_configs["${application}-${environment}"].environment_variables, {}),
