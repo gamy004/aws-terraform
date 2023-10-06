@@ -163,7 +163,7 @@ resource "aws_ecr_repository" "pipeline" {
 }
 
 resource "aws_ecr_repository_policy" "cross_account_access_policy" {
-  for_each = { for k, v in local.pipline_configs : k => v if v.allow_pull_cross_account }
+  for_each = { for k, v in local.pipeline_configs : k => v if v.allow_pull_cross_account }
 
   policy = jsonencode(
     {
