@@ -28,6 +28,7 @@ variable "configs" {
     s3_access_policy_arn              = ""
     service_configs = [{
       service_name             = "<application>-service-<environment>"
+      container_name           = "<application>-service"
       desired_count            = 1    #optional
       enable_autoscaling       = true #optional
       autoscaling_min_capacity = 1    #optional
