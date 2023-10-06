@@ -99,34 +99,38 @@ locals {
   pipeline_configs = merge(
     {
       for config in lookup(var.configs, "service_pipeline_configs", []) : config.service_name => {
-        name                  = "${config.pipeline_name}"
-        repo_name             = "${config.repo_name}"
-        source_provider       = "${config.source_provider}"
-        source_s3_bucket_name = "${config.source_s3_bucket_name}"
-        source_s3_object_key  = "${config.source_s3_object_key}"
-        pull_build_name       = "${config.pull_build_name}"
-        repo_id               = var.configs.repo_configs[config.repo_name].id
-        repo_branch           = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
-        pull                  = try(config.pull, false)
-        build                 = try(config.build, true)
-        deploy                = try(config.deploy, true)
-        review                = try(config.review, true)
+        name                      = "${config.pipeline_name}"
+        repo_name                 = "${config.repo_name}"
+        source_provider           = "${config.source_provider}"
+        source_s3_bucket_name     = "${config.source_s3_bucket_name}"
+        source_s3_object_key      = "${config.source_s3_object_key}"
+        pull_build_name           = "${config.pull_build_name}"
+        repo_id                   = var.configs.repo_configs[config.repo_name].id
+        repo_branch               = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
+        pull                      = try(config.pull, false)
+        allow_pull_cross_account  = try(config.allow_pull_cross_account, false)
+        allow_pull_principle_arns = try(config.allow_pull_principle_arns, {})
+        build                     = try(config.build, true)
+        deploy                    = try(config.deploy, true)
+        review                    = try(config.review, true)
       }
     },
     {
       for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
-        name                  = "${config.pipeline_name}"
-        repo_name             = "${config.repo_name}"
-        source_provider       = "${config.source_provider}"
-        source_s3_bucket_name = "${config.source_s3_bucket_name}"
-        source_s3_object_key  = "${config.source_s3_object_key}"
-        pull_build_name       = "${config.pull_build_name}"
-        repo_id               = var.configs.repo_configs[config.repo_name].id
-        repo_branch           = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
-        pull                  = try(config.pull, false)
-        build                 = try(config.build, true)
-        deploy                = try(config.deploy, false)
-        review                = try(config.review, true)
+        name                      = "${config.pipeline_name}"
+        repo_name                 = "${config.repo_name}"
+        source_provider           = "${config.source_provider}"
+        source_s3_bucket_name     = "${config.source_s3_bucket_name}"
+        source_s3_object_key      = "${config.source_s3_object_key}"
+        pull_build_name           = "${config.pull_build_name}"
+        repo_id                   = var.configs.repo_configs[config.repo_name].id
+        repo_branch               = var.configs.repo_configs[config.repo_name].env_branch_mapping[config.tags.Environment]
+        pull                      = try(config.pull, false)
+        allow_pull_cross_account  = try(config.allow_pull_cross_account, false)
+        allow_pull_principle_arns = try(config.allow_pull_principle_arns, {})
+        build                     = try(config.build, true)
+        deploy                    = try(config.deploy, false)
+        review                    = try(config.review, true)
       }
     }
   )
@@ -156,6 +160,32 @@ resource "aws_ecr_repository" "pipeline" {
   }
 
   tags = merge(var.tags, { Name : "${each.key}" })
+}
+
+resource "aws_ecr_repository_policy" "cross_account_access_policy" {
+  for_each = { for k, v in local.pipline_configs : k => v if v.allow_pull_cross_account }
+
+  policy = jsonencode(
+    {
+      Statement = [
+        {
+          Action = [
+            "ecr:BatchCheckLayerAvailability",
+            "ecr:BatchGetImage",
+            "ecr:GetDownloadUrlForLayer",
+          ]
+          Effect    = "Allow"
+          Principal = each.value.allow_pull_principle_arns
+          # Principal = {
+          #   AWS = "${each.value.allow_pull_principle_arns}"
+          # }
+          Sid = "AllowCrossAccountPush"
+        },
+      ]
+      Version = "2008-10-17"
+    }
+  )
+  repository = aws_ecr_repository.pipeline[each.key].name
 }
 
 resource "aws_iam_policy" "ci" {
