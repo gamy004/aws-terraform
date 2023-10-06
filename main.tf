@@ -69,19 +69,21 @@ locals {
       for application in var.applications : merge(
         lookup(var.backend_configs, "${application}-${environment}", {}),
         {
-          repo_name             = try(var.backend_configs["${application}-${environment}"].repo_name, "${application}-service")
-          source_provider       = try(var.build_configs.pipeline_stages.source["${application}-service-${environment}"].provider, "CodeStarSourceConnection")
-          source_s3_bucket_name = try(var.build_configs.pipeline_stages.source["${application}-service-${environment}"].s3_bucket_name, "")
-          source_s3_object_key  = try(var.build_configs.pipeline_stages.source["${application}-service-${environment}"].s3_object_key, "")        // ${each.value.name}/${each.value.name}.zip
-          service_name          = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}") # must match with `service_name` in ecs
-          ci_build_name         = "${application}-service-ci-codebuild-${environment}"
-          review_build_name     = "${application}-service-review-codebuild-${environment}"
-          pull_build_name       = try(var.build_configs.pipeline_stages.pull["${application}-service-${environment}"].codebuild_name, "automationdoc-codebuild-pull-image")
-          pipeline_name         = "${application}-service-codepipeline-${environment}"
-          pull                  = lookup(try(var.build_configs.pipeline_stages.pull, {}), "${application}-service-${environment}", false) != false
-          build                 = try(var.build_configs.pipeline_stages.build["${application}-service-${environment}"], true)
-          deploy                = try(var.build_configs.pipeline_stages.deploy["${application}-service-${environment}"], true)
-          review                = try(var.build_configs.pipeline_stages.review["${application}-service-${environment}"], false)
+          repo_name                 = try(var.backend_configs["${application}-${environment}"].repo_name, "${application}-service")
+          source_provider           = try(var.build_configs.pipeline_stages.source["${application}-service-${environment}"].provider, "CodeStarSourceConnection")
+          source_s3_bucket_name     = try(var.build_configs.pipeline_stages.source["${application}-service-${environment}"].s3_bucket_name, "")
+          source_s3_object_key      = try(var.build_configs.pipeline_stages.source["${application}-service-${environment}"].s3_object_key, "")        // ${each.value.name}/${each.value.name}.zip
+          service_name              = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}") # must match with `service_name` in ecs
+          ci_build_name             = "${application}-service-ci-codebuild-${environment}"
+          review_build_name         = "${application}-service-review-codebuild-${environment}"
+          pull_build_name           = try(var.build_configs.pipeline_stages.pull["${application}-service-${environment}"].codebuild_name, "automationdoc-codebuild-pull-image")
+          pipeline_name             = "${application}-service-codepipeline-${environment}"
+          pull                      = lookup(try(var.build_configs.pipeline_stages.pull, {}), "${application}-service-${environment}", false) != false
+          allow_pull_cross_account  = try(var.build_configs.ecr_configs["${application}-service-${environment}"].allow_pull_cross_account, false) != false
+          allow_pull_principle_arns = try(var.build_configs.ecr_configs["${application}-service-${environment}"].allow_pull_principle_arns, {})
+          build                     = try(var.build_configs.pipeline_stages.build["${application}-service-${environment}"], true)
+          deploy                    = try(var.build_configs.pipeline_stages.deploy["${application}-service-${environment}"], true)
+          review                    = try(var.build_configs.pipeline_stages.review["${application}-service-${environment}"], false)
           environment_variables = {
             build = merge(
               local.default_environment_variables,
@@ -129,19 +131,21 @@ locals {
       for application in var.applications : merge(
         lookup(var.frontend_configs, "${application}-${environment}", {}),
         {
-          repo_name             = try(var.frontend_configs["${application}-${environment}"].repo_name, "${application}-web")
-          source_provider       = try(var.build_configs.pipeline_stages.source["${application}-web-${environment}"].provider, "CodeStarSourceConnection")
-          source_s3_bucket_name = try(var.build_configs.pipeline_stages.source["${application}-web-${environment}"].s3_bucket_name, "")
-          source_s3_object_key  = try(var.build_configs.pipeline_stages.source["${application}-web-${environment}"].s3_object_key, "")        // ${each.value.name}/${each.value.name}.zip
-          bucket_name           = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in web_configs
-          ci_build_name         = "${application}-web-ci-codebuild-${environment}"
-          review_build_name     = "${application}-web-review-codebuild-${environment}"
-          pull_build_name       = try(var.build_configs.pipeline_stages.pull["${application}-web-${environment}"].codebuild_name, "automationdoc-codebuild-pull-code")
-          pipeline_name         = "${application}-web-codepipeline-${environment}"
-          pull                  = lookup(try(var.build_configs.pipeline_stages.pull, {}), "${application}-web-${environment}", false) != false
-          build                 = try(var.build_configs.pipeline_stages.build["${application}-web-${environment}"], true)
-          deploy                = try(var.build_configs.pipeline_stages.deploy["${application}-web-${environment}"], false)
-          review                = try(var.build_configs.pipeline_stages.review["${application}-web-${environment}"], false)
+          repo_name                 = try(var.frontend_configs["${application}-${environment}"].repo_name, "${application}-web")
+          source_provider           = try(var.build_configs.pipeline_stages.source["${application}-web-${environment}"].provider, "CodeStarSourceConnection")
+          source_s3_bucket_name     = try(var.build_configs.pipeline_stages.source["${application}-web-${environment}"].s3_bucket_name, "")
+          source_s3_object_key      = try(var.build_configs.pipeline_stages.source["${application}-web-${environment}"].s3_object_key, "")        // ${each.value.name}/${each.value.name}.zip
+          bucket_name               = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in web_configs
+          ci_build_name             = "${application}-web-ci-codebuild-${environment}"
+          review_build_name         = "${application}-web-review-codebuild-${environment}"
+          pull_build_name           = try(var.build_configs.pipeline_stages.pull["${application}-web-${environment}"].codebuild_name, "automationdoc-codebuild-pull-code")
+          pipeline_name             = "${application}-web-codepipeline-${environment}"
+          pull                      = lookup(try(var.build_configs.pipeline_stages.pull, {}), "${application}-web-${environment}", false) != false
+          allow_pull_cross_account  = try(var.build_configs.ecr_configs["${application}-web-${environment}"].allow_pull_cross_account, false) != false
+          allow_pull_principle_arns = try(var.build_configs.ecr_configs["${application}-web-${environment}"].allow_pull_principle_arns, {})
+          build                     = try(var.build_configs.pipeline_stages.build["${application}-web-${environment}"], true)
+          deploy                    = try(var.build_configs.pipeline_stages.deploy["${application}-web-${environment}"], false)
+          review                    = try(var.build_configs.pipeline_stages.review["${application}-web-${environment}"], false)
           environment_variables = {
             build = merge(
               local.default_environment_variables,
