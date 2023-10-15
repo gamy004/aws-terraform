@@ -8,8 +8,8 @@ locals {
   has_pipeline_review_stage = contains(keys(var.build_configs.pipeline_stages), "review")
 
   api_configs = flatten([
-    for environment in var.environments : [
-      for application in var.applications : {
+    for application in var.applications : [
+      for environment in var.environments : {
         service_name      = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}")
         host_header_name  = "${try(var.backend_configs["${application}-${environment}"].sub_domain_name, "${environment}-api-${application}")}.${var.domain_name}"
         api_gateway_name  = "${application}-api-gw-${environment}"
@@ -25,8 +25,8 @@ locals {
   ])
 
   web_configs = flatten([
-    for environment in var.environments : [
-      for application in var.applications : {
+    for application in var.applications : [
+      for environment in var.environments : {
         host_header_name = "${try(var.frontend_configs["${application}-${environment}"].sub_domain_name, "${environment}-${application}")}.${var.domain_name}"
         cloudfront_name  = "${application}-web-cf-${environment}"
         bucket_name      = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in pipeline
@@ -46,8 +46,8 @@ locals {
   }
 
   service_ecs_configs = flatten([
-    for environment in var.environments : [
-      for application in var.applications : merge(
+    for application in var.applications : [
+      for environment in var.environments : merge(
         lookup(var.backend_configs, "${application}-${environment}", {}),
         {
           service_name   = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}") # must match with `service_name` in pipeline
@@ -66,8 +66,8 @@ locals {
   ])
 
   service_pipeline_configs = flatten([
-    for environment in var.environments : [
-      for application in var.applications : merge(
+    for application in var.applications : [
+      for environment in var.environments : merge(
         lookup(var.backend_configs, "${application}-${environment}", {}),
         {
           repo_name                 = try(var.backend_configs["${application}-${environment}"].repo_name, "${application}-service")
@@ -128,8 +128,8 @@ locals {
   ])
 
   web_pipeline_configs = flatten([
-    for environment in var.environments : [
-      for application in var.applications : merge(
+    for application in var.applications : [
+      for environment in var.environments : merge(
         lookup(var.frontend_configs, "${application}-${environment}", {}),
         {
           repo_name                 = try(var.frontend_configs["${application}-${environment}"].repo_name, "${application}-web")
@@ -222,8 +222,8 @@ locals {
   }
 
   parameter_store_configs = flatten([
-    for environment in var.environments : [
-      for application in var.applications : {
+    for application in var.applications : [
+      for environment in var.environments : {
         prefix     = "${application}/${environment}"
         parameters = try(var.parameter_store_configs.parameters["${application}-${environment}"], {})
         tags = {
