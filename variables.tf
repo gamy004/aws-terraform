@@ -89,8 +89,9 @@ variable "build_configs" {
       build  = any
       review = any
     }),
-    ecr_configs     = any
-    pipeline_stages = any
+    codebuild_image_configs = any
+    ecr_configs             = any
+    pipeline_stages         = any
   })
   default = {
     environment_variables = {
@@ -98,6 +99,14 @@ variable "build_configs" {
       pull   = {}
       build  = {}
       review = {}
+    }
+    codebuild_image_configs = {
+      "<application>-service-<environment>" = {
+        compute_type = "BUILD_GENERAL1_SMALL"
+        image        = "aws/codebuild/standard:5.0"
+        type         = "LINUX_CONTAINER"
+        buildspec    = "buildspec.yml"
+      }
     }
     ecr_configs = {
       "<application>-service-<environment>" = {

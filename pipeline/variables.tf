@@ -23,13 +23,19 @@ variable "configs" {
     # security_group_ids = list(string)
     # target_group_arns  = list(string)
     service_pipeline_configs = list(object({
-      repo_name                 = string
-      source_provider           = string
-      source_s3_bucket_name     = string
-      source_s3_object_key      = string
-      service_name              = string
-      ci_build_name             = string
-      review_build_name         = string
+      repo_name             = string
+      source_provider       = string
+      source_s3_bucket_name = string
+      source_s3_object_key  = string
+      service_name          = string
+      ci_build_name         = string
+      review_build_name     = string
+      codebuild_image_config = object({
+        compute_type = string
+        image        = string
+        type         = string
+        buildspec    = string
+      })
       pull_build_name           = string
       pipeline_name             = string
       allow_pull_cross_account  = bool
@@ -64,13 +70,19 @@ variable "configs" {
       })
     }))
     web_pipeline_configs = list(object({
-      repo_name                 = string
-      source_provider           = string
-      source_s3_bucket_name     = string
-      source_s3_object_key      = string
-      bucket_name               = string
-      ci_build_name             = string
-      review_build_name         = string
+      repo_name             = string
+      source_provider       = string
+      source_s3_bucket_name = string
+      source_s3_object_key  = string
+      bucket_name           = string
+      ci_build_name         = string
+      review_build_name     = string
+      codebuild_image_config = object({
+        compute_type = string
+        image        = string
+        type         = string
+        buildspec    = string
+      })
       pull_build_name           = string
       pipeline_name             = string
       allow_pull_cross_account  = bool
@@ -120,13 +132,19 @@ variable "configs" {
     review_subnet_ids                = []
     review_security_group_ids        = []
     service_pipeline_configs = [{
-      repo_name                 = "<application>-service"
-      source_provider           = "CodeStarSourceConnection"
-      source_s3_bucket_name     = ""
-      source_s3_object_key      = ""
-      service_name              = "<application>-service-<environment>"
-      ci_build_name             = "<project>-<application>-service-ci-codebuild-<environment>"
-      review_build_name         = "<project>-<application>-service-review-codebuild-<environment>"
+      repo_name             = "<application>-service"
+      source_provider       = "CodeStarSourceConnection"
+      source_s3_bucket_name = ""
+      source_s3_object_key  = ""
+      service_name          = "<application>-service-<environment>"
+      ci_build_name         = "<project>-<application>-service-ci-codebuild-<environment>"
+      review_build_name     = "<project>-<application>-service-review-codebuild-<environment>"
+      codebuild_image_config = {
+        compute_type = "BUILD_GENERAL1_SMALL"
+        image        = "aws/codebuild/standard:7.0"
+        type         = "LINUX_CONTAINER"
+        buildspec    = "buildspec.yml"
+      }
       pull_build_name           = "automationdoc-codebuild-pull-code"
       pipeline_name             = "<project>-<application>-service-codepipeline-<environment>"
       allow_pull_cross_account  = false
@@ -157,13 +175,19 @@ variable "configs" {
       }
     }]
     web_pipeline_configs = [{
-      repo_name                 = "<application>-web"
-      source_provider           = "S3"
-      source_s3_bucket_name     = "automationdoc-ssm-<workload_id>"
-      source_s3_object_key      = "<application>-web-<environment>/<application>-web-<environment>.zip"
-      bucket_name               = "<application>-web-<environment>"
-      ci_build_name             = "<project>-<application>-web-ci-codebuild-<environment>"
-      review_build_name         = "<project>-<application>-web-review-codebuild-<environment>"
+      repo_name             = "<application>-web"
+      source_provider       = "S3"
+      source_s3_bucket_name = "automationdoc-ssm-<workload_id>"
+      source_s3_object_key  = "<application>-web-<environment>/<application>-web-<environment>.zip"
+      bucket_name           = "<application>-web-<environment>"
+      ci_build_name         = "<project>-<application>-web-ci-codebuild-<environment>"
+      review_build_name     = "<project>-<application>-web-review-codebuild-<environment>"
+      codebuild_image_config = {
+        compute_type = "BUILD_GENERAL1_SMALL"
+        image        = "aws/codebuild/standard:7.0"
+        type         = "LINUX_CONTAINER"
+        buildspec    = "buildspec.yml"
+      }
       pull_build_name           = "automationdoc-codebuild-pull-code"
       pipeline_name             = "<project>-<application>-web-codepipeline-<environment>"
       allow_pull_cross_account  = false

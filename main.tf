@@ -45,6 +45,15 @@ locals {
     }
   }
 
+  # ref avaialble compute types: https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html
+  # ref avaialble runtimes: https://docs.aws.amazon.com/codebuild/latest/userguide/available-runtimes.html
+  default_codebuild_image_config = {
+    compute_type = "BUILD_GENERAL1_SMALL"
+    image        = "aws/codebuild/standard:7.0"
+    type         = "LINUX_CONTAINER"
+    buildspec    = "buildspec.yml"
+  }
+
   service_ecs_configs = flatten([
     for application in var.applications : [
       for environment in var.environments : merge(
@@ -77,6 +86,7 @@ locals {
           service_name              = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}") # must match with `service_name` in ecs
           ci_build_name             = "${application}-service-ci-codebuild-${environment}"
           review_build_name         = "${application}-service-review-codebuild-${environment}"
+          codebuild_image_config    = try(var.var.build_configs.codebuild_image_configs["${application}-service-${environment}"], locals.default_codebuild_image_config)
           pull_build_name           = try(var.build_configs.pipeline_stages.pull["${application}-service-${environment}"].codebuild_name, "automationdoc-codebuild-pull-image")
           pipeline_name             = "${application}-service-codepipeline-${environment}"
           pull                      = lookup(try(var.build_configs.pipeline_stages.pull, {}), "${application}-service-${environment}", false) != false
@@ -139,6 +149,7 @@ locals {
           bucket_name               = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in web_configs
           ci_build_name             = "${application}-web-ci-codebuild-${environment}"
           review_build_name         = "${application}-web-review-codebuild-${environment}"
+          codebuild_image_config    = try(var.var.build_configs.codebuild_image_configs["${application}-web-${environment}"], locals.default_codebuild_image_config)
           pull_build_name           = try(var.build_configs.pipeline_stages.pull["${application}-web-${environment}"].codebuild_name, "automationdoc-codebuild-pull-code")
           pipeline_name             = "${application}-web-codepipeline-${environment}"
           pull                      = lookup(try(var.build_configs.pipeline_stages.pull, {}), "${application}-web-${environment}", false) != false
