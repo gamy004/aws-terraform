@@ -70,7 +70,7 @@ locals {
             }
             ENV = {
               type  = "PLAINTEXT"
-              value = var.tags.Environment
+              value = config.tags.Environment
             }
           }
         )
@@ -92,7 +92,7 @@ locals {
             }
             ENV = {
               type  = "PLAINTEXT"
-              value = var.tags.Environment
+              value = config.tags.Environment
             }
           }
         )
