@@ -125,6 +125,8 @@ data "aws_network_interface" "api_gateway_endpoints" {
 module "private_alb" {
   source = "terraform-aws-modules/alb/aws"
 
+  version = "~> 8.0"
+
   name = var.configs.private_alb_name
 
   load_balancer_type         = "application"
@@ -159,6 +161,8 @@ module "private_alb" {
 module "private_nlb" {
   source = "terraform-aws-modules/alb/aws"
 
+  version = "~> 8.0"
+
   name = var.configs.private_nlb_name
 
   load_balancer_type = "network"
@@ -179,6 +183,8 @@ module "private_nlb" {
 # should link to <project>-api-gw-tg-<stage>
 module "public_alb" {
   source = "terraform-aws-modules/alb/aws"
+
+  version = "~> 8.0"
 
   name = var.configs.public_alb_name
 
