@@ -195,19 +195,19 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   for_each    = local.api_gateway_configs
   depends_on  = [aws_api_gateway_rest_api_policy.api_policy]
   rest_api_id = aws_api_gateway_rest_api.api[each.key].id
-  # triggers = {
-  #   redeployment = sha1(jsonencode([
-  #     # aws_api_gateway_rest_api.api[each.key].body,
-  #     aws_api_gateway_resource.proxy[each.key].id,
-  #     aws_api_gateway_method.proxy[each.key].id,
-  #     aws_api_gateway_method.proxy_options[each.key].id,
-  #     aws_api_gateway_integration.proxy[each.key].id,
-  #     aws_api_gateway_integration.proxy_options[each.key].id,
-  #     # aws_api_gateway_method_response.proxy_method_response[each.key].id,
-  #     aws_api_gateway_method_response.proxy_options_method_response[each.key].id,
-  #     aws_api_gateway_integration_response.proxy_options_integration_response[each.key].id
-  #   ]))
-  # }
+  triggers = {
+    redeployment = sha1(jsonencode([
+      # aws_api_gateway_rest_api.api[each.key].body,
+      aws_api_gateway_resource.proxy[each.key].id,
+      aws_api_gateway_method.proxy[each.key].id,
+      aws_api_gateway_method.proxy_options[each.key].id,
+      aws_api_gateway_integration.proxy[each.key].id,
+      aws_api_gateway_integration.proxy_options[each.key].id,
+      # aws_api_gateway_method_response.proxy_method_response[each.key].id,
+      aws_api_gateway_method_response.proxy_options_method_response[each.key].id,
+      aws_api_gateway_integration_response.proxy_options_integration_response[each.key].id
+    ]))
+  }
   lifecycle {
     create_before_destroy = true
   }
