@@ -99,7 +99,10 @@ resource "aws_cognito_user_pool" "this" {
     for_each = length(keys(var.configs.lambda_configs)) > 0 ? [var.configs.lambda_configs] : []
 
     content {
-      user_migration = try(lambda_config.value.user_migration_lambda_arn, null)
+      user_migration                 = try(lambda_config.value.user_migration_lambda_arn, null)
+      define_auth_challenge          = try(lambda_config.value.define_auth_challenge_lambda_arn, null)
+      create_auth_challenge          = try(lambda_config.value.create_auth_challenge_lambda_arn, null)
+      verify_auth_challenge_response = try(lambda_config.value.verify_auth_challenge_response_lambda_arn, null)
     }
   }
 

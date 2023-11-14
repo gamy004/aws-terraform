@@ -150,7 +150,10 @@ variable "authentication_configs" {
   default = {
     dev = {
       lambda_configs = {
-        user_migration_lambda_arn = ""
+        user_migration_lambda_arn                 = ""
+        define_auth_challenge_lambda_arn          = ""
+        create_auth_challenge_lambda_arn          = ""
+        verify_auth_challenge_response_lambda_arn = ""
       }
       client_configs = {
         "<application>-service" = {
@@ -178,7 +181,10 @@ variable "authentication_configs" {
     }
     uat = {
       lambda_configs = {
-        user_migration_lambda_arn = ""
+        user_migration_lambda_arn                 = ""
+        define_auth_challenge_lambda_arn          = ""
+        create_auth_challenge_lambda_arn          = ""
+        verify_auth_challenge_response_lambda_arn = ""
       }
     }
   }
