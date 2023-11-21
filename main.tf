@@ -27,6 +27,7 @@ locals {
   web_configs = flatten([
     for application in var.applications : [
       for environment in var.environments : {
+        certificate_arn  = var.frontend_configs["${application}-${environment}"].cloudfront_certificate_arn
         host_header_name = "${try(var.frontend_configs["${application}-${environment}"].sub_domain_name, "${environment}-${application}")}.${var.domain_name}"
         cloudfront_name  = "${application}-web-cf-${environment}"
         bucket_name      = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in pipeline
@@ -315,13 +316,6 @@ data "aws_acm_certificate" "workload_certificate" {
 
 data "aws_acm_certificate" "network_certificate" {
   provider    = aws.network_infra_role
-  domain      = var.domain_name
-  types       = ["AMAZON_ISSUED"]
-  most_recent = true
-}
-
-data "aws_acm_certificate" "cloudfront_certificate" {
-  provider    = aws.network_infra_role_for_cloudfront
   domain      = var.domain_name
   types       = ["AMAZON_ISSUED"]
   most_recent = true
@@ -623,7 +617,7 @@ module "api_cdn" {
     aws = aws.network_infra_role_for_cloudfront
   }
 
-  certificate_arn = data.aws_acm_certificate.cloudfront_certificate.arn
+  certificate_arn = var.backend_configs.cloudfront_certificate_arn
   configs = {
     cf_name     = "${var.project_name}-api-cf-${var.stage}"
     web_acl_arn = module.waf.backend.arn
@@ -733,7 +727,7 @@ module "web_cdn" {
     aws = aws.network_infra_role_for_cloudfront
   }
 
-  certificate_arn = data.aws_acm_certificate.cloudfront_certificate.arn
+  certificate_arn = each.value.certificate_arn
   configs = {
     cf_name            = "${each.value.cloudfront_name}"
     web_acl_arn        = module.waf.frontend.arn
