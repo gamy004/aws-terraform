@@ -115,7 +115,7 @@ resource "aws_cloudwatch_event_rule" "pipeline_trigger_deploy" {
       ]
     }
   )
-  is_enabled = true
+  state      = "ENABLED"
   name       = "${each.key}-triggers-${each.key}-codepipeline"
   tags       = merge(var.tags, { Name = "${each.key}-triggers-${each.key}-codepipeline" })
 }

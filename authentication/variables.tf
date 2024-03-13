@@ -40,7 +40,10 @@ variable "configs" {
     auto_verified_attributes = ["email"]
     required_user_attributes = ["email"]
     lambda_configs = {
-      user_migration_lambda_arn = ""
+      user_migration_lambda_arn                 = ""
+      define_auth_challenge_lambda_arn          = ""
+      create_auth_challenge_lambda_arn          = ""
+      verify_auth_challenge_response_lambda_arn = ""
     }
     clients = {
       "<application>-service-<environment>" = {

@@ -2,8 +2,9 @@ locals {
   ci_configs = merge(
     {
       for config in lookup(var.configs, "service_pipeline_configs", []) : config.service_name => {
-        name            = "${config.ci_build_name}"
-        pull_build_name = "${config.pull_build_name}"
+        name                   = "${config.ci_build_name}"
+        pull_build_name        = "${config.pull_build_name}"
+        codebuild_image_config = "${config.codebuild_image_config}"
         environment_variables = merge(
           {
             for variable_name, variable_config in lookup(config.environment_variables, "build", {}) : variable_name => variable_config
@@ -27,8 +28,9 @@ locals {
     },
     {
       for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
-        name            = "${config.ci_build_name}"
-        pull_build_name = "${config.pull_build_name}"
+        name                   = "${config.ci_build_name}"
+        pull_build_name        = "${config.pull_build_name}"
+        codebuild_image_config = "${config.codebuild_image_config}"
         environment_variables = merge(
           {
             for variable_name, variable_config in lookup(config.environment_variables, "build", {}) : variable_name => variable_config
@@ -55,7 +57,8 @@ locals {
   review_configs = merge(
     {
       for config in lookup(var.configs, "service_pipeline_configs", []) : config.service_name => {
-        name = "${config.review_build_name}"
+        name                   = "${config.review_build_name}"
+        codebuild_image_config = "${config.codebuild_image_config}"
         environment_variables = merge(
           {
             for variable_name, variable_config in lookup(config.environment_variables, "review", {}) : variable_name => variable_config
@@ -67,7 +70,7 @@ locals {
             }
             ENV = {
               type  = "PLAINTEXT"
-              value = var.tags.Stage
+              value = config.tags.Environment
             }
           }
         )
@@ -76,7 +79,8 @@ locals {
     },
     {
       for config in lookup(var.configs, "web_pipeline_configs", []) : config.bucket_name => {
-        name = "${config.review_build_name}"
+        name                   = "${config.review_build_name}"
+        codebuild_image_config = "${config.codebuild_image_config}"
         environment_variables = merge(
           {
             for variable_name, variable_config in lookup(config.environment_variables, "review", {}) : variable_name => variable_config
@@ -88,7 +92,7 @@ locals {
             }
             ENV = {
               type  = "PLAINTEXT"
-              value = var.tags.Stage
+              value = config.tags.Environment
             }
           }
         )
@@ -820,11 +824,11 @@ resource "aws_codebuild_project" "ci" {
   }
 
   environment {
-    compute_type                = "BUILD_GENERAL1_SMALL"
-    image                       = "aws/codebuild/standard:7.0"
+    compute_type                = each.value.codebuild_image_config.compute_type
+    image                       = each.value.codebuild_image_config.image
+    type                        = each.value.codebuild_image_config.type
     image_pull_credentials_type = "CODEBUILD"
     privileged_mode             = true
-    type                        = "LINUX_CONTAINER"
 
     dynamic "environment_variable" {
       for_each = each.value.environment_variables
@@ -838,7 +842,7 @@ resource "aws_codebuild_project" "ci" {
   }
 
   source {
-    buildspec           = "buildspec.yml"
+    buildspec           = each.value.codebuild_image_config.buildspec
     git_clone_depth     = 0
     insecure_ssl        = false
     report_build_status = false
@@ -871,11 +875,11 @@ resource "aws_codebuild_project" "review" {
   }
 
   environment {
-    compute_type                = "BUILD_GENERAL1_SMALL"
-    image                       = "aws/codebuild/standard:7.0"
+    compute_type                = each.value.codebuild_image_config.compute_type
+    image                       = each.value.codebuild_image_config.image
+    type                        = each.value.codebuild_image_config.type
     image_pull_credentials_type = "CODEBUILD"
     privileged_mode             = true
-    type                        = "LINUX_CONTAINER"
 
     dynamic "environment_variable" {
       for_each = each.value.environment_variables

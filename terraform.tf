@@ -3,14 +3,14 @@ terraform {
     organization = "kmutt-4life"
 
     workspaces {
-      name = "4life-prod"
+      name = "4life-nonprod"
     }
   }
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.16"
+      version = "~> 5.0"
     }
   }
 

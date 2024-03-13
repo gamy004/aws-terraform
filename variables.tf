@@ -89,8 +89,9 @@ variable "build_configs" {
       build  = any
       review = any
     }),
-    ecr_configs     = any
-    pipeline_stages = any
+    codebuild_image_configs = any
+    ecr_configs             = any
+    pipeline_stages         = any
   })
   default = {
     environment_variables = {
@@ -98,6 +99,14 @@ variable "build_configs" {
       pull   = {}
       build  = {}
       review = {}
+    }
+    codebuild_image_configs = {
+      "<application>-service-<environment>" = {
+        compute_type = "BUILD_GENERAL1_SMALL"
+        image        = "aws/codebuild/standard:5.0"
+        type         = "LINUX_CONTAINER"
+        buildspec    = "buildspec.yml"
+      }
     }
     ecr_configs = {
       "<application>-service-<environment>" = {
@@ -141,7 +150,10 @@ variable "authentication_configs" {
   default = {
     dev = {
       lambda_configs = {
-        user_migration_lambda_arn = ""
+        user_migration_lambda_arn                 = ""
+        define_auth_challenge_lambda_arn          = ""
+        create_auth_challenge_lambda_arn          = ""
+        verify_auth_challenge_response_lambda_arn = ""
       }
       client_configs = {
         "<application>-service" = {
@@ -169,7 +181,10 @@ variable "authentication_configs" {
     }
     uat = {
       lambda_configs = {
-        user_migration_lambda_arn = ""
+        user_migration_lambda_arn                 = ""
+        define_auth_challenge_lambda_arn          = ""
+        create_auth_challenge_lambda_arn          = ""
+        verify_auth_challenge_response_lambda_arn = ""
       }
     }
   }
