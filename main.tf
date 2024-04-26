@@ -9,43 +9,33 @@ locals {
 
   api_configs = compact(flatten([
     for application in var.applications : [
-      for environment in var.environments : {
-        api_config = lookup(var.backend_configs, "${application}-${environment}", null)
-        if api_config != null
-        then {
-          service_name      = try(api_config.service_name, "${application}-service-${environment}")
-          host_header_name  = "${try(api_config.sub_domain_name, "${environment}-api-${application}")}.${var.domain_name}"
-          api_gateway_name  = "${application}-api-gw-${environment}"
-          target_group_name = "${application}-ecs-tg-${environment}"
-          # module.s3_web[each.value.bucket_name].s3_bucket_bucket_regional_domain_name
-          allowed_origins = [for allowed_origin in try(api_config.allowed_origins, []) : "'${allowed_origin}'"]
-          tags = {
-            Environment = environment
-            Application = application
-          }
+      for environment in var.environments : contains(keys(var.backend_configs), "${application}-${environment}") ? {
+        service_name      = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}")
+        host_header_name  = "${try(var.backend_configs["${application}-${environment}"].sub_domain_name, "${environment}-api-${application}")}.${var.domain_name}"
+        api_gateway_name  = "${application}-api-gw-${environment}"
+        target_group_name = "${application}-ecs-tg-${environment}"
+        # module.s3_web[each.value.bucket_name].s3_bucket_bucket_regional_domain_name
+        allowed_origins = [for allowed_origin in try(var.backend_configs["${application}-${environment}"].allowed_origins, []) : "'${allowed_origin}'"]
+        tags = {
+          Environment = environment
+          Application = application
         }
-        else null
-      }
+      } : null
     ]
   ]))
 
   web_configs = compact(flatten([
     for application in var.applications : [
-      for environment in var.environments : {
-        web_config = lookup(var.frontend_configs, "${application}-${environment}", null)
-        if web_config != null
-        then {
-          certificate_arn  = web_config.cloudfront_certificate_arn
-          host_header_name = "${try(web_config.sub_domain_name, "${environment}-${application}")}.${var.domain_name}"
-          cloudfront_name  = "${application}-web-cf-${environment}"
-          bucket_name      = try(web_config.bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in pipeline
-          tags = {
-            Environment = environment
-            Application = application
-          }
+      for environment in var.environments : contains(keys(var.frontend_configs), "${application}-${environment}") ? {
+        certificate_arn  = var.frontend_configs["${application}-${environment}"].cloudfront_certificate_arn
+        host_header_name = "${try(var.frontend_configs["${application}-${environment}"].sub_domain_name, "${environment}-${application}")}.${var.domain_name}"
+        cloudfront_name  = "${application}-web-cf-${environment}"
+        bucket_name      = try(var.frontend_configs["${application}-${environment}"].bucket_name, "${application}-web-${environment}") # must match with `bucket_name` in pipeline
+        tags = {
+          Environment = environment
+          Application = application
         }
-        else null
-      }
+      } : null
     ]
   ]))
 
