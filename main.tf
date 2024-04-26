@@ -7,9 +7,9 @@ locals {
 
   has_pipeline_review_stage = contains(keys(var.build_configs.pipeline_stages), "review")
 
-  api_configs = compact(flatten([
+  api_configs = flatten([
     for application in var.applications : [
-      for environment in var.environments : contains(keys(var.backend_configs), "${application}-${environment}") ? {
+      for environment in var.environments : {
         service_name      = try(var.backend_configs["${application}-${environment}"].service_name, "${application}-service-${environment}")
         host_header_name  = "${try(var.backend_configs["${application}-${environment}"].sub_domain_name, "${environment}-api-${application}")}.${var.domain_name}"
         api_gateway_name  = "${application}-api-gw-${environment}"
@@ -20,13 +20,13 @@ locals {
           Environment = environment
           Application = application
         }
-      } : null
+      }
     ]
-  ]))
+  ])
 
-  web_configs = compact(flatten([
+  web_configs = flatten([
     for application in var.applications : [
-      for environment in var.environments : contains(keys(var.frontend_configs), "${application}-${environment}") ? {
+      for environment in var.environments : {
         certificate_arn  = var.frontend_configs["${application}-${environment}"].cloudfront_certificate_arn
         host_header_name = "${try(var.frontend_configs["${application}-${environment}"].sub_domain_name, "${environment}-${application}")}.${var.domain_name}"
         cloudfront_name  = "${application}-web-cf-${environment}"
@@ -35,9 +35,9 @@ locals {
           Environment = environment
           Application = application
         }
-      } : null
+      }
     ]
-  ]))
+  ])
 
   default_environment_variables = {
     AWS_DEFAULT_REGION = {

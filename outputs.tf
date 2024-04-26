@@ -46,3 +46,7 @@
 output "api_configs" {
   value = local.api_configs
 }
+
+output "web_configs" {
+  value = local.web_configs
+}
