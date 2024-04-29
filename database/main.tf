@@ -17,7 +17,8 @@ module "db" {
   deletion_protection          = each.value.deletion_protection
   performance_insights_enabled = true
   storage_encrypted            = true
-  master_username              = "postgres"
+  master_username              = each.value.master_username
+  manage_master_user_password_rotation = false
 
   vpc_id = var.vpc_id
 
