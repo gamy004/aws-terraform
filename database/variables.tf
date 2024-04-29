@@ -29,6 +29,7 @@ variable "configs" {
     engine              = string
     engine_version      = string
     port                = number
+    master_username     = string
     min_capacity        = number
     max_capacity        = number
     num_instances       = number
@@ -40,6 +41,7 @@ variable "configs" {
       port               = 5432
       engine             = "aurora-postgresql"
       engine_version     = "15.3"
+      master_username    = "postgres"
       min_capacity       = 0.5
       max_capacity       = 1
       num_instances      = 1
